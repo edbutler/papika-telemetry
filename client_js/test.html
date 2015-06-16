@@ -1,0 +1,26 @@
+<html>
+    <head>
+        <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script src="papika.js"></script>
+        <script>
+            $(function() {
+                var tc = papika.TelemetryClient('http://localhost:5000');
+
+                var session_id;
+
+                tc.log_session({
+                    user:'748ad5bd-8645-4a08-a8e0-f3521a9e4413',
+                    release:'de4b98ad-3f9a-4aa9-ba7a-9f8cd80eab6e',
+                    detail:{im:'some data', with:[2,'arrays']}
+                }).then(function(sid) {
+                    console.log(sid);
+                }, function(error) {
+                    console.error(error);
+                });
+            });
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
+

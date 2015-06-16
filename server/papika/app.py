@@ -45,21 +45,10 @@ class Event(db.Model):
     # blob of json data
     detail = db.Column(db.Unicode)
 
-required_fields = {
-    'session' : frozenset(['id', 'player_id', 'client_time', 'detail']),
-    'event': frozenset(['session_id', 'sequence_index', 'game_time', 'client_time', 'event_type_id', 'detail'])
-}
-
 def parse_message(request):
+    print(request.headers)
     content = request.json
-
-    #release = releases[content['release']]
     data = content['data']
-    checksum = content['checksum']
-    # mmm hardcoded salts
-    salt = 'ML6AZJgPqtyMosJUT9pSPAWWigL0D1YkbVzJ44KAUi6eukyfoHRJhQl8ead3m9b'
-    expected = hashlib.sha256((data + salt).encode('utf-8')).hexdigest()
-    if expected != checksum: raise ValueError('hash does not match!')
     return json.loads(data), content
 
 def create_object(obj, server_time, data, required_fields):
@@ -73,6 +62,14 @@ def create_object(obj, server_time, data, required_fields):
     obj.set_from_dict(data)
 
     return obj
+
+@app.after_request
+def add_cors_header(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'HEAD, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 @app.route('/api/session', methods=['POST'])
 def log_session():
