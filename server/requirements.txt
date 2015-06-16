@@ -1,3 +1,4 @@
 Flask-SQLAlchemy
+flask-cors
 tornado
 psycopg2

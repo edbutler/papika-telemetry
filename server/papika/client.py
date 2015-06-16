@@ -9,6 +9,9 @@ import json
 import requests
 import hashlib
 
+PROTOCOL_VERSION = 1
+
+# currently unused, but might bring this back later?
 def create_checksum(params):
     salt = 'ML6AZJgPqtyMosJUT9pSPAWWigL0D1YkbVzJ44KAUi6eukyfoHRJhQl8ead3m9b'
     params['checksum'] = hashlib.sha256((params['data'] + salt).encode('utf-8')).hexdigest()
@@ -19,16 +22,16 @@ def send_post_request(url, params):
     return req.json()
 
 def log_session(player_id, release_id, detail):
-    data = json.dumps({
+    data = {
         'player_id':str(player_id),
         'release_id':str(release_id),
         'client_time':str(datetime.datetime.utcnow()),
         'detail':json.dumps(detail),
-    })
-    params = {
-        'data': data
     }
-    create_checksum(params)
+    params = {
+        'version': PROTOCOL_VERSION,
+        'data': data,
+    }
     result = send_post_request("http://localhost:5000/api/session", params)
     return result['session_id']
 
@@ -46,12 +49,11 @@ class Event(object):
         }
 
 def log_events(session_id, events):
-    data = json.dumps([e.data for e in events])
     params = {
-        'data': data,
+        'version': PROTOCOL_VERSION,
+        'data': [e.data for e in events],
         'session': session_id,
     }
-    create_checksum(params)
     result = send_post_request("http://localhost:5000/api/event", params)
 
 

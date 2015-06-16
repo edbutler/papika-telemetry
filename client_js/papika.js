@@ -6,6 +6,8 @@ var papika = function(){
     "use strict";
     var mdl = {};
 
+    var PROTOCOL_VESRION = 1;
+
     function send_post_request(url, params) {
         return fetch(url, {
             method: 'post',
@@ -36,7 +38,8 @@ var papika = function(){
         };
 
         var params = {
-            data: JSON.stringify(data),
+            version: PROTOCOL_VESRION,
+            data: data,
             release: args.release,
         };
 
@@ -45,11 +48,58 @@ var papika = function(){
         });
     }
 
-    mdl.TelemetryClient = function(baseUri) {
-        var self = {}; 
-        self.log_session = function(args) {
-            return log_session(baseUri, args);
+    function log_events(baseUri, session_id, events) {
+        var params = {
+            version: PROTOCOL_VESRION,
+            data: events,
+            session: session_id,
         };
+
+        return send_post_request(baseUri + '/api/event', params);
+    }
+
+    mdl.TelemetryClient = function(baseUri) {
+        if (typeof baseUri !== 'string') throw Error('baseUri is not a string!');
+
+        var self = {}; 
+
+        var session_sequence_counter = 1;
+        var p_session_id = undefined;
+        var events_to_log = [];
+
+        self.log_session = function(args) {
+            if (p_session_id) throw Error('session alread logged!');
+            p_session_id = log_session(baseUri, args);
+            p_session_id.then(function (sid) {
+                console.log('Success! Session id is ' + sid);
+            }, function (err) {
+                console.log('Error logging session: ' + err);
+            });
+        };
+
+        function flush_event_log() {
+            // FIXME need to not do this until the current operation has finished
+            p_session_id.then(function(session_id) {
+                log_events(baseUri, session_id, events_to_log);
+            });
+        }
+
+        self.log_event = function(args) {
+            // TODO add some argument checking and error handling
+
+            if (!p_session_id) throw Error('session not yet logged!');
+
+            events_to_log.push({
+                type_id: args.type_id,
+                session_sequence_index: session_sequence_counter,
+                client_time: new Date().toISOString(),
+                detail: JSON.stringify(args.detail),
+            });
+            session_sequence_counter += 1;
+
+            // TODO wait until it's bigger
+            flush_event_log();
+        }
 
         return self;
     };

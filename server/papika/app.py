@@ -4,6 +4,7 @@ import json
 import hashlib
 import flask
 import flask.ext.sqlalchemy
+import flask_cors
 from sqlalchemy.dialects.postgresql import UUID
 import datetime
 import uuid
@@ -12,8 +13,11 @@ app = flask.Flask(__name__)
 app.config.from_object('papika.defaultconfig')
 app.config.from_envvar('PAPIKA_SETTINGS', silent=True)
 db = flask.ext.sqlalchemy.SQLAlchemy(app)
+cors = flask_cors.CORS(app)
 
 releases = app.config['RELEASES']
+
+PROTOCOL_VERSION = 1
 
 def set_from_dict(self, items):
     for c in self.__table__.columns:
@@ -46,10 +50,12 @@ class Event(db.Model):
     detail = db.Column(db.Unicode)
 
 def parse_message(request):
-    print(request.headers)
     content = request.json
+    version = content['version']
+    if version != PROTOCOL_VERSION:
+        raise RuntimeError('invalid protocol version!')
     data = content['data']
-    return json.loads(data), content
+    return data, content
 
 def create_object(obj, server_time, data, required_fields):
     if required_fields != frozenset(data.keys()):
@@ -63,13 +69,10 @@ def create_object(obj, server_time, data, required_fields):
 
     return obj
 
-@app.after_request
-def add_cors_header(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'HEAD, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
-    response.headers['Access-Control-Allow-Credentials'] = 'true'
-    return response
+# we want a custom 500 error handler so CORS headers are set correctly, even on exceptions.
+@app.errorhandler(500)
+def internal_error(e):
+    return "internal error", 500
 
 @app.route('/api/session', methods=['POST'])
 def log_session():
