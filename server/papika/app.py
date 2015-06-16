@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function, unicode_literals
-
 import sys
 import os
 import json
@@ -9,13 +7,13 @@ import flask.ext.sqlalchemy
 from sqlalchemy.dialects.postgresql import UUID
 import datetime
 import uuid
-#import dateutil.parser
 
 app = flask.Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 << 20
-# mmmm hard-coded database locations
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///logging_dev'
+app.config.from_object('papika.defaultconfig')
+app.config.from_envvar('PAPIKA_SETTINGS', silent=True)
 db = flask.ext.sqlalchemy.SQLAlchemy(app)
+
+releases = app.config['RELEASES']
 
 def set_from_dict(self, items):
     for c in self.__table__.columns:
