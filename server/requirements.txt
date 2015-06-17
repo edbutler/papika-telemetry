@@ -3,3 +3,4 @@ flask-cors
 tornado
 psycopg2
 python-dateutil
+requests
