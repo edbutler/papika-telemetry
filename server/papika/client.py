@@ -25,7 +25,7 @@ def log_session(player_id, release_id, detail):
     data = {
         'player_id':str(player_id),
         'release_id':str(release_id),
-        'client_time':str(datetime.datetime.utcnow()),
+        'client_time':str(datetime.datetime.now()),
         'detail':json.dumps(detail),
     }
     params = {
@@ -44,7 +44,7 @@ class Event(object):
         self.data = {
             'type_id': type_id,
             'session_sequence_index': counter,
-            'client_time': str(datetime.datetime.utcnow()),
+            'client_time': str(datetime.datetime.now()),
             'detail': json.dumps(detail),
         }
 

@@ -2,3 +2,4 @@ Flask-SQLAlchemy
 flask-cors
 tornado
 psycopg2
+python-dateutil

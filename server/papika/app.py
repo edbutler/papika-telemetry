@@ -1,13 +1,9 @@
-import sys
-import os
+import os, sys
 import json
-import hashlib
-import flask
-import flask.ext.sqlalchemy
-import flask_cors
-from sqlalchemy.dialects.postgresql import UUID
-import datetime
 import uuid
+import flask, flask.ext.sqlalchemy, flask_cors
+from sqlalchemy.dialects.postgresql import UUID
+import datetime, dateutil.parser
 
 app = flask.Flask(__name__)
 app.config.from_object('papika.defaultconfig')
@@ -61,8 +57,7 @@ def create_object(obj, server_time, data, required_fields):
     if required_fields != frozenset(data.keys()):
         raise ValueError('missing data: ' + str(list(required_fields.difference(data.keys()))))
 
-    # FIXME maybe like use the actual client time
-    #data['client_time'] = server_time
+    data['client_time'] = dateutil.parser.parse(data['client_time'])
     data['server_time'] = server_time
 
     obj.set_from_dict(data)
@@ -85,16 +80,9 @@ def log_session():
     db.session.commit()
     return flask.jsonify(session_id=obj.id)
 
-first = True
-
 @app.route('/api/event', methods=['POST'])
 def log_events():
-    global first
-    if first:
-        first = False
-        raise RuntimeError('asdasdfasdf')
-
-    server_time = datetime.datetime.utcnow()
+    server_time = datetime.datetime.now()
     data, params = parse_message(flask.request)
     session_id = params['session']
     required = frozenset(['session_sequence_index', 'client_time', 'type_id', 'detail'])
