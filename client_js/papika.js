@@ -26,7 +26,7 @@ var papika = function(){
 
     function log_session(baseUri, args) {
         var data = {
-            player_id: args.user,
+            user_id: args.user,
             release_id: args.release,
             client_time: new Date().toISOString(),
             detail: JSON.stringify(args.detail),

@@ -21,9 +21,9 @@ def send_post_request(url, params):
     req = requests.post(url, data=json.dumps(params), headers={'Content-Type':'application/json'})
     return req.json()
 
-def log_session(player_id, release_id, detail):
+def log_session(user_id, release_id, detail):
     data = {
-        'player_id':str(player_id),
+        'user_id':str(user_id),
         'release_id':str(release_id),
         'client_time':str(datetime.datetime.now()),
         'detail':json.dumps(detail),
@@ -58,7 +58,7 @@ def log_events(session_id, events):
 
 
 session_id = log_session(
-    player_id=UUID('748ad5bd-8645-4a08-a8e0-f3521a9e4413'),
+    user_id=UUID('748ad5bd-8645-4a08-a8e0-f3521a9e4413'),
     release_id=UUID('de4b98ad-3f9a-4aa9-ba7a-9f8cd80eab6e'),
     detail={'im':'some data', 'with':[2,'arrays']}
 )

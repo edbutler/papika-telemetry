@@ -24,7 +24,7 @@ db.Model.set_from_dict = set_from_dict
 
 class Session(db.Model):
     id = db.Column(UUID, primary_key=True)
-    player_id = db.Column(UUID, nullable=False)
+    user_id = db.Column(UUID, nullable=False)
     release_id = db.Column(UUID, nullable=False)
     server_time = db.Column(db.DateTime(timezone=True), nullable=False)
     client_time = db.Column(db.DateTime(timezone=True), nullable=False)
@@ -74,7 +74,7 @@ def internal_error(e):
 def log_session():
     server_time = datetime.datetime.utcnow()
     data, params = parse_message(flask.request)
-    required = frozenset(['player_id', 'release_id', 'client_time', 'detail'])
+    required = frozenset(['user_id', 'release_id', 'client_time', 'detail'])
     obj = create_object(Session(), server_time, data, required)
     obj.id = str(uuid.uuid4())
     db.session.add(obj)
