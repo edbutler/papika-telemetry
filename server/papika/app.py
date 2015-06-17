@@ -85,8 +85,15 @@ def log_session():
     db.session.commit()
     return flask.jsonify(session_id=obj.id)
 
+first = True
+
 @app.route('/api/event', methods=['POST'])
 def log_events():
+    global first
+    if first:
+        first = False
+        raise RuntimeError('asdasdfasdf')
+
     server_time = datetime.datetime.utcnow()
     data, params = parse_message(flask.request)
     session_id = params['session']

@@ -49,6 +49,7 @@ var papika = function(){
     }
 
     function log_events(baseUri, session_id, events) {
+        console.log('actually logging events!');
         var params = {
             version: PROTOCOL_VESRION,
             data: events,
@@ -65,6 +66,8 @@ var papika = function(){
 
         var session_sequence_counter = 1;
         var p_session_id = undefined;
+        var p_event_log = new Promise(function(resolve){resolve();});
+        var event_log_lock = false;
         var events_to_log = [];
 
         self.log_session = function(args) {
@@ -75,12 +78,31 @@ var papika = function(){
             }, function (err) {
                 console.log('Error logging session: ' + err);
             });
+            return p_session_id;
         };
 
         function flush_event_log() {
-            // FIXME need to not do this until the current operation has finished
-            p_session_id.then(function(session_id) {
-                log_events(baseUri, session_id, events_to_log);
+            console.log('flushing event log!');
+
+            // block until the current operation has finished
+            p_event_log.then(function() {
+                // if something else was already waiting to send events (and beat us) then give up
+                if (event_log_lock || events_to_log.length === 0) return;
+                // else stop anything else waiting to send events
+                event_log_lock = true;
+
+                p_event_log = p_session_id.then(function(session_id) {
+                    var log_to = events_to_log.length;
+
+                    return log_events(baseUri, session_id, events_to_log).then(function() {
+                        // success! throw out the events we successfully logged
+                        events_to_log.splice(0, log_to);
+                        event_log_lock = false;
+                    }, function() {
+                        // error! end the promise anyway, but keep the failed events around
+                        event_log_lock = false;
+                    });
+                });
             });
         }
 
