@@ -25,11 +25,6 @@ var papika = function(){
     }
 
     function log_session(baseUri, args) {
-        if (!args) throw Error("no session data!");
-        if (typeof args.user !== 'string') throw Error("bad/missing session user id!");
-        if (typeof args.release !== 'string') throw Error("bad/missing session release id!");
-        if (typeof args.detail !== 'object') throw Error("bad/missing session detail object!");
-
         var data = {
             player_id: args.user,
             release_id: args.release,
@@ -49,7 +44,6 @@ var papika = function(){
     }
 
     function log_events(baseUri, session_id, events) {
-        console.log('actually logging events!');
         var params = {
             version: PROTOCOL_VESRION,
             data: events,
@@ -72,18 +66,16 @@ var papika = function(){
 
         self.log_session = function(args) {
             if (p_session_id) throw Error('session alread logged!');
+            if (!args) throw Error("no session data!");
+            if (typeof args.user !== 'string') throw Error("bad/missing session user id!");
+            if (typeof args.release !== 'string') throw Error("bad/missing session release id!");
+            if (typeof args.detail !== 'object') throw Error("bad/missing session detail object!");
+
             p_session_id = log_session(baseUri, args);
-            p_session_id.then(function (sid) {
-                console.log('Success! Session id is ' + sid);
-            }, function (err) {
-                console.log('Error logging session: ' + err);
-            });
             return p_session_id;
         };
 
         function flush_event_log() {
-            console.log('flushing event log!');
-
             // block until the current operation has finished
             p_event_log.then(function() {
                 // if something else was already waiting to send events (and beat us) then give up
