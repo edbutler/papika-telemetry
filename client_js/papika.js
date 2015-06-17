@@ -69,7 +69,7 @@ var papika = function(){
             if (!args) throw Error("no session data!");
             if (typeof args.user !== 'string') throw Error("bad/missing session user id!");
             if (typeof args.release !== 'string') throw Error("bad/missing session release id!");
-            if (typeof args.detail !== 'object') throw Error("bad/missing session detail object!");
+            if (typeof args.detail === 'undefined') throw Error("bad/missing session detail object!");
 
             p_session_id = log_session(baseUri, args);
             return p_session_id;
@@ -100,18 +100,20 @@ var papika = function(){
 
         self.log_event = function(args) {
             // TODO add some argument checking and error handling
-
             if (!p_session_id) throw Error('session not yet logged!');
+            if (typeof args.type_id !== 'number') throw Error('bad/missing type_id!');
+            if (typeof args.detail === 'undefined') throw Error("bad/missing session detail object!");
+            var detail = JSON.stringify(args.detail);
 
             events_to_log.push({
                 type_id: args.type_id,
                 session_sequence_index: session_sequence_counter,
                 client_time: new Date().toISOString(),
-                detail: JSON.stringify(args.detail),
+                detail: detail,
             });
             session_sequence_counter += 1;
 
-            // TODO wait until it's bigger
+            // TODO maybe wait and batch flushes (with a timeout if it doesn't fill up)
             flush_event_log();
         }
 

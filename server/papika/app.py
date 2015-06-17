@@ -65,6 +65,7 @@ def create_object(obj, server_time, data, required_fields):
     return obj
 
 # we want a custom 500 error handler so CORS headers are set correctly, even on exceptions.
+# TODO this apparently actually doesn't work at all, hmmmm
 @app.errorhandler(500)
 def internal_error(e):
     return "internal error", 500
