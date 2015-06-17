@@ -1,3 +1,9 @@
+/**!
+ * Papika telemetry client library.
+ * Copyright 2015 Eric Butler.
+ * Revision Id: UNKNOWN_REVISION_ID
+ */
+
 if (typeof module !== 'undefined' && module.exports) {
     fetch = require('node-fetch');
 }
@@ -7,6 +13,7 @@ var papika = function(){
     var mdl = {};
 
     var PROTOCOL_VESRION = 1;
+    var REVISION_ID = 'UNKNOWN_REVISION_ID';
 
     function send_post_request(url, params) {
         return fetch(url, {
