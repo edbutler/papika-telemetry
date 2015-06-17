@@ -4,9 +4,6 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
-DEV_PORT=5000
-PRD_PORT=5000
-
 def _go(args):
     if args.config is not None:
         path = os.path.abspath(args.config.name)
@@ -14,15 +11,16 @@ def _go(args):
         args.config.close()
 
     from . import app
+    port = app.app.config['PORT']
     app.setup()
 
     if args.mode == 'dev':
-        print("Starting development server on port %d..." % DEV_PORT)
-        app.app.run(port=DEV_PORT)
+        print("Starting development server on port %d..." % port)
+        app.app.run(port=port)
     elif args.mode == 'prd':
         http_server = HTTPServer(WSGIContainer(app.app))
-        http_server.listen(PRD_PORT)
-        print("Starting production server on port %d..." % PRD_PORT)
+        http_server.listen(port)
+        print("Starting production server on port %d..." % port)
         IOLoop.instance().start()
     else:
         sys.stderr.write("Invalid mode %s, aborting.\n" % args.mode)
