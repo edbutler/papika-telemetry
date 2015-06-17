@@ -101,12 +101,12 @@ var papika = function(){
         self.log_event = function(args) {
             // TODO add some argument checking and error handling
             if (!p_session_id) throw Error('session not yet logged!');
-            if (typeof args.type_id !== 'number') throw Error('bad/missing type_id!');
+            if (typeof args.type !== 'number') throw Error('bad/missing type!');
             if (typeof args.detail === 'undefined') throw Error("bad/missing session detail object!");
             var detail = JSON.stringify(args.detail);
 
             events_to_log.push({
-                type_id: args.type_id,
+                type_id: args.type,
                 session_sequence_index: session_sequence_counter,
                 client_time: new Date().toISOString(),
                 detail: detail,

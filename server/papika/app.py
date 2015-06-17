@@ -11,8 +11,6 @@ app.config.from_envvar('PAPIKA_SETTINGS', silent=True)
 db = flask.ext.sqlalchemy.SQLAlchemy(app)
 cors = flask_cors.CORS(app)
 
-releases = app.config['RELEASES']
-
 PROTOCOL_VERSION = 1
 
 def set_from_dict(self, items):
@@ -24,10 +22,15 @@ db.Model.set_from_dict = set_from_dict
 
 class Session(db.Model):
     id = db.Column(UUID, primary_key=True)
+    # user id, specified by client, used to match up sessions with the same user
     user_id = db.Column(UUID, nullable=False)
+    # the application version
     release_id = db.Column(UUID, nullable=False)
+    # wall time the server received the request to log this event
     server_time = db.Column(db.DateTime(timezone=True), nullable=False)
+    # wall time of the client computer when the event was generated
     client_time = db.Column(db.DateTime(timezone=True), nullable=False)
+    # blob of json data
     detail = db.Column(db.Unicode)
 
 class Event(db.Model):

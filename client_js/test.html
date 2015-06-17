@@ -17,18 +17,18 @@
 
                     setTimeout(function() {
                         tc.log_event({
-                            type_id: 789,
+                            type: 789,
                             detail: 'third event!',
                         });
                     }, 1000);
                 });
 
                 tc.log_event({
-                    type_id: 123,
+                    type: 123,
                     detail: 'a string',
                 });
                 tc.log_event({
-                    type_id: 456,
+                    type: 456,
                     detail: 'second event!',
                 });
             });
