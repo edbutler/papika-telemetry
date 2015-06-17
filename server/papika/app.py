@@ -32,6 +32,8 @@ class Session(db.Model):
     client_time = db.Column(db.DateTime(timezone=True), nullable=False)
     # blob of json data
     detail = db.Column(db.Unicode)
+    # the VCS revision id of the telemetry library (uniquely identifying which version is running)
+    library_revid = db.Column(db.Unicode)
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -77,7 +79,7 @@ def internal_error(e):
 def log_session():
     server_time = datetime.datetime.utcnow()
     data, params = parse_message(flask.request)
-    required = frozenset(['user_id', 'release_id', 'client_time', 'detail'])
+    required = frozenset(['user_id', 'release_id', 'client_time', 'library_revid', 'detail'])
     obj = create_object(Session(), server_time, data, required)
     obj.id = str(uuid.uuid4())
     db.session.add(obj)

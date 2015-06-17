@@ -1,15 +1,27 @@
 
 # Reference client for telemetry system.
 
+import os, sys
+import subprocess
 import datetime
-import urllib.parse
-import urllib.request
 from uuid import UUID
 import json
 import requests
 import hashlib
 
 PROTOCOL_VERSION = 1
+
+localdir = os.path.abspath(os.path.dirname(__file__))
+
+def check_output(args, cwd):
+    '''Wrapper for subprocess.check_output that converts result to unicode'''
+    result = subprocess.check_output(args, cwd=cwd)
+    return result.decode('utf-8')
+
+revid = check_output(['git', 'rev-parse', 'HEAD'], localdir).strip()
+status = check_output(['git', 'status', '--porcelain'], localdir).strip()
+if len(status) > 0:
+    revid += "+"
 
 # currently unused, but might bring this back later?
 def create_checksum(params):
@@ -26,6 +38,7 @@ def log_session(user_id, release_id, detail):
         'user_id':str(user_id),
         'release_id':str(release_id),
         'client_time':str(datetime.datetime.now()),
+        'library_revid': revid,
         'detail':json.dumps(detail),
     }
     params = {

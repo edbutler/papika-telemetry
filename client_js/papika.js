@@ -37,6 +37,7 @@ var papika = function(){
             release_id: args.release,
             client_time: new Date().toISOString(),
             detail: JSON.stringify(args.detail),
+            library_revid: REVISION_ID,
         };
 
         var params = {
