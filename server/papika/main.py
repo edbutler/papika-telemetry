@@ -7,7 +7,7 @@ from tornado.ioloop import IOLoop
 def _go(args):
     if args.config is not None:
         path = os.path.abspath(args.config.name)
-        os.environ['PAPIKA_SETTINGS'] = path
+        os.environ['PAPIKA_CONFIG'] = path
         args.config.close()
 
     from . import app
@@ -42,7 +42,7 @@ def main():
     )
 
     parser.add_argument('config', nargs='?', default=None, type=argparse.FileType('r'),
-        help="Config file to use for the server. An alternative is to set the PAPIKA_SETTINGS environment variable."
+        help="Config file to use for the server. An alternative is to set the PAPIKA_CONFIG environment variable."
     )
 
     _go(parser.parse_args())
