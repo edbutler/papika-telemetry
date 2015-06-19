@@ -33,6 +33,29 @@ def send_post_request(url, params):
     req = requests.post(url, data=json.dumps(params), headers={'Content-Type':'application/json'})
     return req.json()
 
+def query_user(username):
+    data = {
+        'username':username,
+    }
+    params = {
+        'version': PROTOCOL_VERSION,
+        'data': data,
+    }
+    result = send_post_request("http://localhost:5000/api/user", params)
+    return result['user_id']
+
+def query_experiment(user_id, experiment_id):
+    data = {
+        'user_id':str(user_id),
+        'experiment_id':str(experiment_id),
+    }
+    params = {
+        'version': PROTOCOL_VERSION,
+        'data': data,
+    }
+    result = send_post_request("http://localhost:5000/api/experiment", params)
+    return result['condition']
+
 def log_session(user_id, release_id, detail):
     data = {
         'user_id':str(user_id),
@@ -69,9 +92,16 @@ def log_events(session_id, events):
     }
     result = send_post_request("http://localhost:5000/api/event", params)
 
+user_id = query_user('pika')
+
+condition = query_experiment(
+    user_id=user_id,
+    experiment_id=UUID('00000000-0000-0000-0000-000000000000'),
+)
+print('Condition:' + str(condition))
 
 session_id = log_session(
-    user_id=UUID('748ad5bd-8645-4a08-a8e0-f3521a9e4413'),
+    user_id=user_id,
     release_id=UUID('de4b98ad-3f9a-4aa9-ba7a-9f8cd80eab6e'),
     detail={'im':'some data', 'with':[2,'arrays']}
 )
