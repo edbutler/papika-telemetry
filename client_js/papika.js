@@ -15,6 +15,11 @@ var papika = function(){
     var PROTOCOL_VESRION = 1;
     var REVISION_ID = 'UNKNOWN_REVISION_ID';
 
+    var uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    function is_uuid(str) {
+        return uuid_regex.test(str);
+    }
+
     function send_post_request(url, params) {
         return fetch(url, {
             method: 'post',
@@ -55,22 +60,18 @@ var papika = function(){
         var data = {
             username: username
         };
-        return send_nonsession_request(baseUri + '/api/user', data, session_id, session_key)
-            .then(function(result) {
-                return result.user_id;
-            });
+        return send_nonsession_request(baseUri + '/api/user', data, release_id, release_key);
     }
 
     function query_experimental_condition(baseUri, args) {
         var data = {
-            user_id: args.user_id,
-            experiment_id: args.experiment_id
+            user_id: args.user,
+            experiment_id: args.experiment
         };
-
-
-        return send_post_request(baseUri + '/api/experiment', params).then(function(result) {
-            return result.user_id;
-        });
+        return send_nonsession_request(baseUri + '/api/experiement', data, session_id, session_key)
+            .then(function(result) {
+                return result.condition;
+            });
     }
 
     function log_session(baseUri, args, release_id, release_key) {
@@ -81,20 +82,19 @@ var papika = function(){
             detail: JSON.stringify(args.detail),
             library_revid: REVISION_ID,
         };
-        return send_nonsession_request(baseUri + '/api/session', data, release_id, release_key)
-            .then(function(result) {
-                return result.session_id;
-            });
+        return send_nonsession_request(baseUri + '/api/session', data, release_id, release_key);
     }
 
     function log_events(baseUri, events, session_id, session_key) {
         return send_session_request(baseUri + '/api/event', events, session_id, session_key);
     }
 
-    mdl.TelemetryClient = function(baseUri) {
+    mdl.TelemetryClient = function(baseUri, release_id, release_key) {
+        if (!is_uuid(release_id)) throw Error('release id is not a uuid!');
+        if (typeof release_key !== 'string') throw Error('release key is not a string!');
         if (typeof baseUri !== 'string') throw Error('baseUri is not a string!');
 
-        var self = {}; 
+        var self = {};
 
         var session_sequence_counter = 1;
         var task_id_counter = 1;
@@ -102,17 +102,6 @@ var papika = function(){
         var p_event_log = new Promise(function(resolve){resolve();});
         var event_log_lock = false;
         var events_to_log = [];
-
-        self.log_session = function(args) {
-            if (p_session_id) throw Error('session alread logged!');
-            if (!args) throw Error("no session data!");
-            if (typeof args.user !== 'string') throw Error("bad/missing session user id!");
-            if (typeof args.release !== 'string') throw Error("bad/missing session release id!");
-            if (typeof args.detail === 'undefined') throw Error("bad/missing session detail object!");
-
-            p_session_id = log_session(baseUri, args, args.release, null);
-            return p_session_id;
-        };
 
         function flush_event_log() {
             // block until the current operation has finished
@@ -122,10 +111,10 @@ var papika = function(){
                 // else stop anything else waiting to send events
                 event_log_lock = true;
 
-                p_event_log = p_session_id.then(function(session_id) {
+                p_event_log = p_session_id.then(function(session) {
                     var log_to = events_to_log.length;
 
-                    return log_events(baseUri, events_to_log, session_id).then(function() {
+                    return log_events(baseUri, events_to_log, session.session_id, session.session_key).then(function() {
                         // success! throw out the events we successfully logged
                         events_to_log.splice(0, log_to);
                         event_log_lock = false;
@@ -134,6 +123,31 @@ var papika = function(){
                         event_log_lock = false;
                     });
                 });
+            });
+        }
+
+        self.log_session = function(args) {
+            if (p_session_id) throw Error('session already logged!');
+            if (!args) throw Error("no session data!");
+            if (!is_uuid(args.user)) throw Error("bad/missing session user id!");
+            if (typeof args.detail === 'undefined') throw Error("bad/missing session detail object!");
+
+            p_session_id = log_session(baseUri, args, release_id, release_key);
+            return p_session_id;
+        };
+
+        self.query_user_id = function(args) {
+            if (typeof args.username !== 'string') throw Error('bad/missing username!');
+            return query_user_id(baseUri, args.username, release_id, release_key).then(function(result) {
+                return result.user_id;
+            });
+        }
+
+        self.query_experimental_condition = function(args) {
+            if (!is_uuid(args.user)) throw Error('bad/missing user id!');
+            if (!is_uuid(args.experiment)) throw Error('bad/missing experiment id!');
+            return query_experimental_condition(baseUri, args, release_id, release_key).then(function(result) {
+                return result.condition;
             });
         }
 
@@ -160,7 +174,7 @@ var papika = function(){
         }
 
         self.start_task = function(args) {
-            if (typeof args.group !== 'string') throw Error('bad/missing group!');
+            if (!is_uuid(args.group)) throw Error('bad/missing group!');
 
             var task_id = task_id_counter;
             task_id_counter += 1;

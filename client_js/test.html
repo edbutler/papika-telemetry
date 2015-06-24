@@ -4,46 +4,46 @@
         <script src="papika.js"></script>
         <script>
             $(function() {
-                var tc = papika.TelemetryClient('http://localhost:5000');
+                var tc = papika.TelemetryClient('http://localhost:5000', 'de4b98ad-3f9a-4aa9-ba7a-9f8cd80eab6e', 'abcde');
 
-                var session_id;
+                tc.query_user_id({username:'flower'}).then(function(user_id) {
 
-                tc.log_session({
-                    user:'748ad5bd-8645-4a08-a8e0-f3521a9e4413',
-                    release:'de4b98ad-3f9a-4aa9-ba7a-9f8cd80eab6e',
-                    detail:{im:'some data', with:[2,'arrays']}
-                }).then(function(sid) {
-                    console.log('Success! Session id is ' + sid);
+                    tc.log_session({
+                        user:user_id,
+                        detail:{im:'some data', with:[2,'arrays']}
+                    }).then(function(sid) {
+                        console.log('Success! Session id is ' + sid);
 
-                    setTimeout(function() {
-                        tc.log_event({
-                            type: 789,
-                            detail: 'third event!',
-                        });
-                    }, 1000);
-                });
+                        setTimeout(function() {
+                            tc.log_event({
+                                type: 789,
+                                detail: 'third event!',
+                            });
+                        }, 1000);
+                    });
 
-                tc.log_event({
-                    type: 123,
-                    detail: 'a string',
-                });
-                tc.log_event({
-                    type: 456,
-                    detail: 'second event!',
-                });
+                    tc.log_event({
+                        type: 123,
+                        detail: 'a string',
+                    });
+                    tc.log_event({
+                        type: 456,
+                        detail: 'second event!',
+                    });
 
-                var task = tc.start_task({
-                    type:123,
-                    group:'22e85d79-9ce2-4ff7-b060-bb195b812194',
-                    detail: "a task start",
-                });
-                task.log_event({
-                    type: 555,
-                    detail: "I'm a task event!",
-                });
-                task.log_event({
-                    type: 777,
-                    detail: "I'm another task event!",
+                    var task = tc.start_task({
+                        type:123,
+                        group:'22e85d79-9ce2-4ff7-b060-bb195b812194',
+                        detail: "a task start",
+                    });
+                    task.log_event({
+                        type: 555,
+                        detail: "I'm a task event!",
+                    });
+                    task.log_event({
+                        type: 777,
+                        detail: "I'm another task event!",
+                    });
                 });
             });
         </script>
