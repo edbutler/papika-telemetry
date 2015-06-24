@@ -67,7 +67,9 @@ class TaskStart(db.Model):
 class TaskEvent(db.Model):
     __tablename__ = 'task_event'
     id = db.Column(Event.id.type, db.ForeignKey('event.id'), primary_key=True)
+    # client-selected id for this task. all events within the task will share this id.
     task_id = db.Column(TaskStart.task_id.type, nullable=False)
+    # index of this event in all events this task (e.g., 1st event is 1, 2nd is 2...)
     task_sequence_index = db.Column(db.Integer, nullable=False)
 
 # mapping from indenifiable usernames to (presumably anonymous) user ids.
@@ -80,9 +82,11 @@ class User(db.Model):
 # many-to-many mapping of users to experimental condition
 class UserExperiment(db.Model):
     __tablename__ = 'user_experiment'
-    # TODO add foreign key for player
+    # user id, might not be in the user table if the client is generating its own user ids
     user_id = db.Column(UUID, primary_key=True)
+    # experiement id, specified in the config file
     experiment_id = db.Column(UUID, primary_key=True)
+    # condition to which they are assigned, chocies are specified in the config file
     condition = db.Column(db.Integer, nullable=False)
 
 def parse_message(request):
@@ -135,10 +139,12 @@ def log_events():
     session_id = params['session']
     required = frozenset(['session_sequence_index', 'client_time', 'type_id', 'detail'])
     events = [create_object(Event(), server_time, e, required) for e in data]
+    # commit all events first (because we need the ids)
     for obj in events:
         obj.session_id = session_id
         db.session.add(obj)
     db.session.commit()
+    # then commit any sub-objects of those events
     for obj, e in zip(events, data):
         if 'task_start' in e:
             o = create_object(TaskStart(), None, e['task_start'], frozenset(['task_id', 'group_id']))
