@@ -90,7 +90,7 @@ def parse_message(request):
     version = content['version']
     if version != PROTOCOL_VERSION:
         raise RuntimeError('invalid protocol version!')
-    data = content['data']
+    data = json.loads(content['data'])
     return data, content
 
 def create_object(obj, server_time, data, required_fields):
@@ -119,9 +119,10 @@ def internal_error(e):
 def log_session():
     server_time = datetime.datetime.utcnow()
     data, params = parse_message(flask.request)
-    required = frozenset(['user_id', 'release_id', 'client_time', 'library_revid', 'detail'])
+    required = frozenset(['user_id', 'client_time', 'library_revid', 'detail'])
     obj = create_object(Session(), server_time, data, required)
     obj.id = str(uuid.uuid4())
+    obj.release_id = params['release']
     db.session.add(obj)
     db.session.commit()
     session_key = create_hash(app.config['SECRET_KEY'], obj.id)
@@ -131,15 +132,14 @@ def log_session():
 def log_events():
     server_time = datetime.datetime.now()
     data, params = parse_message(flask.request)
-    session_id = data['session']
+    session_id = params['session']
     required = frozenset(['session_sequence_index', 'client_time', 'type_id', 'detail'])
-    print(data)
-    events = [create_object(Event(), server_time, e, required) for e in data['events']]
+    events = [create_object(Event(), server_time, e, required) for e in data]
     for obj in events:
         obj.session_id = session_id
         db.session.add(obj)
     db.session.commit()
-    for obj, e in zip(events, data['events']):
+    for obj, e in zip(events, data):
         if 'task_start' in e:
             o = create_object(TaskStart(), None, e['task_start'], frozenset(['task_id', 'group_id']))
             o.id = obj.id
