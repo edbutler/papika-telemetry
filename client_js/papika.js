@@ -31,7 +31,49 @@ var papika = function(){
         });
     }
 
-    function log_session(baseUri, args) {
+    function send_nonsession_request(url, data, release_id, release_key) {
+        var sdata = JSON.stringify(data);
+        return send_post_request(url, {
+            version: PROTOCOL_VESRION,
+            data: sdata,
+            release: release_id,
+            checksum: ''
+        });
+    }
+
+    function send_session_request(url, data, session_id, session_key) {
+        var sdata = JSON.stringify(data);
+        return send_post_request(url, {
+            version: PROTOCOL_VESRION,
+            data: sdata,
+            session: session_id,
+            checksum: ''
+        });
+    }
+
+    function query_user_id(baseUri, username, release_id, release_key) {
+        var data = {
+            username: username
+        };
+        return send_nonsession_request(baseUri + '/api/user', data, session_id, session_key)
+            .then(function(result) {
+                return result.user_id;
+            });
+    }
+
+    function query_experimental_condition(baseUri, args) {
+        var data = {
+            user_id: args.user_id,
+            experiment_id: args.experiment_id
+        };
+
+
+        return send_post_request(baseUri + '/api/experiment', params).then(function(result) {
+            return result.user_id;
+        });
+    }
+
+    function log_session(baseUri, args, release_id, release_key) {
         var data = {
             user_id: args.user,
             release_id: args.release,
@@ -39,26 +81,14 @@ var papika = function(){
             detail: JSON.stringify(args.detail),
             library_revid: REVISION_ID,
         };
-
-        var params = {
-            version: PROTOCOL_VESRION,
-            data: data,
-            release: args.release,
-        };
-
-        return send_post_request(baseUri + '/api/session', params).then(function(result) {
-            return result.session_id;
-        });
+        return send_nonsession_request(baseUri + '/api/session', data, release_id, release_key)
+            .then(function(result) {
+                return result.session_id;
+            });
     }
 
-    function log_events(baseUri, session_id, events) {
-        var params = {
-            version: PROTOCOL_VESRION,
-            data: events,
-            session: session_id,
-        };
-
-        return send_post_request(baseUri + '/api/event', params);
+    function log_events(baseUri, events, session_id, session_key) {
+        return send_session_request(baseUri + '/api/event', events, session_id, session_key);
     }
 
     mdl.TelemetryClient = function(baseUri) {
@@ -79,7 +109,7 @@ var papika = function(){
             if (typeof args.release !== 'string') throw Error("bad/missing session release id!");
             if (typeof args.detail === 'undefined') throw Error("bad/missing session detail object!");
 
-            p_session_id = log_session(baseUri, args);
+            p_session_id = log_session(baseUri, args, args.release, null);
             return p_session_id;
         };
 
@@ -94,7 +124,7 @@ var papika = function(){
                 p_event_log = p_session_id.then(function(session_id) {
                     var log_to = events_to_log.length;
 
-                    return log_events(baseUri, session_id, events_to_log).then(function() {
+                    return log_events(baseUri, events_to_log, session_id).then(function() {
                         // success! throw out the events we successfully logged
                         events_to_log.splice(0, log_to);
                         event_log_lock = false;
