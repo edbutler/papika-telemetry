@@ -69,7 +69,7 @@ def log_session(user_id, release_id, detail):
         'data': data,
     }
     result = send_post_request("http://localhost:5000/api/session", params)
-    return result['session_id']
+    return result['session_id'], result['session_key']
 
 counter = 0
 
@@ -124,11 +124,13 @@ condition = query_experiment(
 )
 print('Condition:' + str(condition))
 
-session_id = log_session(
+session_id, session_key = log_session(
     user_id=user_id,
     release_id=UUID('de4b98ad-3f9a-4aa9-ba7a-9f8cd80eab6e'),
     detail={'im':'some data', 'with':[2,'arrays']}
 )
+
+print(session_key)
 
 task = TaskStart(
     group_id=UUID('586c3a14-3659-4975-a28e-d88811a4632b'),

@@ -5,6 +5,7 @@ import random
 import flask, flask.ext.sqlalchemy, flask_cors
 from sqlalchemy.dialects.postgresql import UUID
 import datetime, dateutil.parser
+import hashlib
 
 app = flask.Flask(__name__)
 app.config.from_object('papika.defaultconfig')
@@ -105,6 +106,9 @@ def create_object(obj, server_time, data, required_fields):
 
     return obj
 
+def create_hash(key, data):
+    return hashlib.sha256(data.encode('utf-8') + key).hexdigest()
+
 # we want a custom 500 error handler so CORS headers are set correctly, even on exceptions.
 # TODO this apparently actually doesn't work at all, hmmmm
 @app.errorhandler(500)
@@ -120,7 +124,8 @@ def log_session():
     obj.id = str(uuid.uuid4())
     db.session.add(obj)
     db.session.commit()
-    return flask.jsonify(session_id=obj.id)
+    session_key = create_hash(app.config['SECRET_KEY'], obj.id)
+    return flask.jsonify(session_id=obj.id, session_key=session_key)
 
 @app.route('/api/event', methods=['POST'])
 def log_events():
