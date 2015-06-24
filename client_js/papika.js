@@ -97,6 +97,7 @@ var papika = function(){
         var self = {}; 
 
         var session_sequence_counter = 1;
+        var task_id_counter = 1;
         var p_session_id = undefined;
         var p_event_log = new Promise(function(resolve){resolve();});
         var event_log_lock = false;
@@ -143,16 +144,44 @@ var papika = function(){
             if (typeof args.detail === 'undefined') throw Error("bad/missing session detail object!");
             var detail = JSON.stringify(args.detail);
 
-            events_to_log.push({
+            var data = {
                 type_id: args.type,
                 session_sequence_index: session_sequence_counter,
                 client_time: new Date().toISOString(),
                 detail: detail,
-            });
+            };
+            if (args.task_start) data.task_start = args.task_start;
+            if (args.task_event) data.task_event = args.task_event;
+            events_to_log.push(data);
             session_sequence_counter += 1;
 
             // TODO maybe wait and batch flushes (with a timeout if it doesn't fill up)
             flush_event_log();
+        }
+
+        self.start_task = function(args) {
+            if (typeof args.group !== 'string') throw Error('bad/missing group!');
+
+            var task_id = task_id_counter;
+            task_id_counter += 1;
+            var task_sequence_counter = 1;
+
+            args.task_start = {
+                task_id: task_id,
+                group_id: args.group
+            };
+            self.log_event(args);
+
+            return {
+                log_event: function(args) {
+                    args.task_event = {
+                        task_id: task_id,
+                        task_sequence_index: task_sequence_counter
+                    };
+                    task_sequence_counter += 1;
+                    self.log_event(args);
+                }
+            };
         }
 
         return self;

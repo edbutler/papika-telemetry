@@ -31,6 +31,20 @@
                     type: 456,
                     detail: 'second event!',
                 });
+
+                var task = tc.start_task({
+                    type:123,
+                    group:'22e85d79-9ce2-4ff7-b060-bb195b812194',
+                    detail: "a task start",
+                });
+                task.log_event({
+                    type: 555,
+                    detail: "I'm a task event!",
+                });
+                task.log_event({
+                    type: 777,
+                    detail: "I'm another task event!",
+                });
             });
         </script>
     </head>
