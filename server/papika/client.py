@@ -4,7 +4,7 @@
 import os, sys
 import subprocess
 import datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 import json
 import requests
 import hashlib
@@ -73,7 +73,7 @@ def log_session(user_id, release_id, detail):
 
 counter = 0
 
-class Event(object):
+class Event:
     def __init__(self, type_id, detail):
         global counter
         counter += 1
@@ -84,13 +84,37 @@ class Event(object):
             'detail': json.dumps(detail),
         }
 
+task_counter = 0
+
+class TaskStart(Event):
+    def __init__(self, group_id, type_id, detail):
+        super().__init__(type_id, detail)
+        global task_counter
+        task_counter += 1
+        self.task_id = task_counter
+        self.data['task_start'] = {
+            'task_id': self.task_id,
+            'group_id': str(group_id),
+        }
+
+class TaskEvent(Event):
+    def __init__(self, task_id, seq_index, type_id, detail):
+        super().__init__(type_id, detail)
+        self.data['task_event'] = {
+            'task_id': task_id,
+            'task_sequence_index': seq_index
+        }
+
 def log_events(session_id, events):
     params = {
         'version': PROTOCOL_VERSION,
-        'data': [e.data for e in events],
-        'session': session_id,
+        'data': {
+            'events': [e.data for e in events],
+            'session': session_id,
+        },
     }
     result = send_post_request("http://localhost:5000/api/event", params)
+
 
 user_id = query_user('pika')
 
@@ -106,11 +130,22 @@ session_id = log_session(
     detail={'im':'some data', 'with':[2,'arrays']}
 )
 
+task = TaskStart(
+    group_id=UUID('586c3a14-3659-4975-a28e-d88811a4632b'),
+    type_id=2,
+    detail="I'm a task start"
+)
+task_events = [
+    TaskEvent(task.task_id, 1, 10, 'task event 1'),
+    TaskEvent(task.task_id, 2, 432, 'task event 2'),
+    TaskEvent(task.task_id, 3, 4, 'task event 3'),
+]
+
 events = [
     Event(23, {'Im':['An', 'Event']}),
     Event(62, {'A Different':[None, False, 'Event']}),
     Event(23, 'blahblahblablablhablhablhahah'),
 ]
 
-log_events(session_id, events)
+log_events(session_id, events + [task] + task_events)
 

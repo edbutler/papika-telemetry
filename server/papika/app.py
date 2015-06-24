@@ -39,7 +39,7 @@ class Session(db.Model):
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(UUID, db.ForeignKey('session.id'), nullable=False)
+    session_id = db.Column(Session.id.type, db.ForeignKey('session.id'), nullable=False)
     # index of this event in all events this session (e.g., 1st event is 1, 2nd is 2...)
     session_sequence_index = db.Column(db.Integer, nullable=False)
     # wall time the server received the request to log this event
@@ -51,6 +51,23 @@ class Event(db.Model):
     type_id = db.Column(db.SmallInteger, nullable=False)
     # blob of json data
     detail = db.Column(db.Unicode, nullable=False)
+
+# a type of event which marks the start of a group of events.
+# other events can be associated with this event.
+# used to group events that are part of the same game level, problem, puzzle, task, quest, etc.
+class TaskStart(db.Model):
+    __tablename__ = 'task_start'
+    id = db.Column(Event.id.type, db.ForeignKey('event.id'), primary_key=True)
+    # client-selected id for this task. all events within the task will share this id.
+    task_id = db.Column(db.Integer, nullable=False)
+    # aka level id, problem id, quest id, puzzle id. whatever the things you are tracing are.
+    group_id = db.Column(UUID, nullable=False)
+
+class TaskEvent(db.Model):
+    __tablename__ = 'task_event'
+    id = db.Column(Event.id.type, db.ForeignKey('event.id'), primary_key=True)
+    task_id = db.Column(TaskStart.task_id.type, nullable=False)
+    task_sequence_index = db.Column(db.Integer, nullable=False)
 
 # mapping from indenifiable usernames to (presumably anonymous) user ids.
 class User(db.Model):
@@ -76,11 +93,13 @@ def parse_message(request):
     return data, content
 
 def create_object(obj, server_time, data, required_fields):
-    if required_fields != frozenset(data.keys()):
+    if not required_fields.issubset(frozenset(data.keys())):
         raise ValueError('missing data: ' + str(list(required_fields.difference(data.keys()))))
 
-    data['client_time'] = dateutil.parser.parse(data['client_time'])
-    data['server_time'] = server_time
+    # HACK only want to set times for tables with these columns
+    if 'client_time' in data:
+        data['client_time'] = dateutil.parser.parse(data['client_time'])
+        data['server_time'] = server_time
 
     obj.set_from_dict(data)
 
@@ -91,6 +110,42 @@ def create_object(obj, server_time, data, required_fields):
 @app.errorhandler(500)
 def internal_error(e):
     return "internal error", 500
+
+@app.route('/api/session', methods=['POST'])
+def log_session():
+    server_time = datetime.datetime.utcnow()
+    data, params = parse_message(flask.request)
+    required = frozenset(['user_id', 'release_id', 'client_time', 'library_revid', 'detail'])
+    obj = create_object(Session(), server_time, data, required)
+    obj.id = str(uuid.uuid4())
+    db.session.add(obj)
+    db.session.commit()
+    return flask.jsonify(session_id=obj.id)
+
+@app.route('/api/event', methods=['POST'])
+def log_events():
+    server_time = datetime.datetime.now()
+    data, params = parse_message(flask.request)
+    session_id = data['session']
+    required = frozenset(['session_sequence_index', 'client_time', 'type_id', 'detail'])
+    print(data)
+    events = [create_object(Event(), server_time, e, required) for e in data['events']]
+    for obj in events:
+        obj.session_id = session_id
+        db.session.add(obj)
+    db.session.commit()
+    for obj, e in zip(events, data['events']):
+        if 'task_start' in e:
+            o = create_object(TaskStart(), None, e['task_start'], frozenset(['task_id', 'group_id']))
+            o.id = obj.id
+            db.session.add(o)
+        if 'task_event' in e:
+            o = create_object(TaskEvent(), None, e['task_event'], frozenset(['task_id', 'task_sequence_index']))
+            o.id = obj.id
+            db.session.add(o)
+    db.session.commit()
+
+    return flask.jsonify(is_success=True)
 
 @app.route('/api/user', methods=['POST'])
 def create_user_id():
@@ -123,30 +178,6 @@ def get_experimental_condition():
         db.session.commit()
 
     return flask.jsonify(condition=pe.condition)
-
-@app.route('/api/session', methods=['POST'])
-def log_session():
-    server_time = datetime.datetime.utcnow()
-    data, params = parse_message(flask.request)
-    required = frozenset(['user_id', 'release_id', 'client_time', 'library_revid', 'detail'])
-    obj = create_object(Session(), server_time, data, required)
-    obj.id = str(uuid.uuid4())
-    db.session.add(obj)
-    db.session.commit()
-    return flask.jsonify(session_id=obj.id)
-
-@app.route('/api/event', methods=['POST'])
-def log_events():
-    server_time = datetime.datetime.now()
-    data, params = parse_message(flask.request)
-    session_id = params['session']
-    required = frozenset(['session_sequence_index', 'client_time', 'type_id', 'detail'])
-    for e in data:
-        obj = create_object(Event(), server_time, e, required)
-        obj.session_id = session_id
-        db.session.add(obj)
-    db.session.commit()
-    return flask.jsonify(is_success=True)
 
 def setup():
     db.create_all()
