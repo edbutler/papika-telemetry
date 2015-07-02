@@ -9,7 +9,7 @@ import hashlib
 
 app = flask.Flask(__name__)
 app.config.from_object('papika.defaultconfig')
-app.config.from_envvar('PAPIKA_SETTINGS', silent=True)
+app.config.from_envvar('PAPIKA_CONFIG', silent=True)
 db = flask.ext.sqlalchemy.SQLAlchemy(app)
 cors = flask_cors.CORS(app)
 experiments = app.config['PAPIKA_EXPERIMENTS']
