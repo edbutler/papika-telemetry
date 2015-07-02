@@ -9,6 +9,14 @@ def _go(args):
         path = os.path.abspath(args.config.name)
         os.environ['PAPIKA_CONFIG'] = path
         args.config.close()
+    else:
+        try:
+            with open(os.environ['PAPIKA_CONFIG'], 'r'): pass
+        except KeyError:
+            sys.stderr.write("WARNING: no config file specified via CLI and PAPIKA_CONFIG envvar not set! You should set the config via one of those methods.\n")
+        except:
+            sys.stderr.write("WARNING: PAPIKA_CONFIG envvar does not point to a valid file, not loading config!\n")
+
 
     from . import app
     port = app.app.config['PORT']
