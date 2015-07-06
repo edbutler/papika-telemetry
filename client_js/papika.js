@@ -19,6 +19,7 @@ var papika = function(){
     function is_uuid(str) {
         return uuid_regex.test(str);
     }
+    mdl.is_uuid = is_uuid;
 
     function send_post_request(url, params) {
         return fetch(url, {
@@ -63,15 +64,12 @@ var papika = function(){
         return send_nonsession_request(baseUri + '/api/user', data, release_id, release_key);
     }
 
-    function query_experimental_condition(baseUri, args) {
+    function query_experimental_condition(baseUri, args, release_id, release_key) {
         var data = {
             user_id: args.user,
             experiment_id: args.experiment
         };
-        return send_nonsession_request(baseUri + '/api/experiement', data, session_id, session_key)
-            .then(function(result) {
-                return result.condition;
-            });
+        return send_nonsession_request(baseUri + '/api/experiment', data, release_id, release_key);
     }
 
     function log_session(baseUri, args, release_id, release_key) {
