@@ -83,7 +83,8 @@ var papika = function(){
         return send_nonsession_request(baseUri + '/api/session', data, release_id, release_key);
     }
 
-    function log_events(baseUri, events, session_id, session_key) {
+    function log_events(baseUri, to_log, session_id, session_key) {
+        var events = to_log.map(function(e) { return e.event; });
         return send_session_request(baseUri + '/api/event', events, session_id, session_key);
     }
 
@@ -113,8 +114,10 @@ var papika = function(){
                     var log_to = events_to_log.length;
 
                     return log_events(baseUri, events_to_log, session.session_id, session.session_key).then(function() {
-                        // success! throw out the events we successfully logged
-                        events_to_log.splice(0, log_to);
+                        // success! throw out the events we successfully logged, after resolving any promises
+                        events_to_log.splice(0, log_to).forEach(function(e) {
+                            if (e.resolve) { e.resolve(); }
+                        });
                         event_log_lock = false;
                     }, function() {
                         // error! end the promise anyway, but keep the failed events around
@@ -149,7 +152,7 @@ var papika = function(){
             });
         }
 
-        self.log_event = function(args) {
+        self.log_event = function(args, do_create_promise) {
             // TODO add some argument checking and error handling
             if (!p_session_id) throw Error('session not yet logged!');
             if (typeof args.type !== 'number') throw Error('bad/missing type!');
@@ -164,11 +167,22 @@ var papika = function(){
             };
             if (args.task_start) data.task_start = args.task_start;
             if (args.task_event) data.task_event = args.task_event;
-            events_to_log.push(data);
+
+            var to_log = {event:data};
+
+            var promise;
+            if (do_create_promise) {
+                promise = new Promise(function(resolve, reject) {
+                    to_log.resolve = resolve;
+                });
+            }
+
+            events_to_log.push(to_log);
             session_sequence_counter += 1;
 
             // TODO maybe wait and batch flushes (with a timeout if it doesn't fill up)
             flush_event_log();
+            return promise;
         }
 
         self.start_task = function(args) {
