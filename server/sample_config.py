@@ -1,2 +1,3 @@
 DEBUG=False
-SQLALCHEMY_DATABASE_URI = 'postgresql:///logging_prd'
+SQLALCHEMY_DATABASE_URI = 'postgresql:///logging'
+PORT=5555
