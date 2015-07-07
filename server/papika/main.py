@@ -26,7 +26,14 @@ def _go(args):
         print("Starting development server on port %d..." % port)
         app.app.run(port=port)
     elif args.mode == 'prd':
-        http_server = HTTPServer(WSGIContainer(app.app))
+        appl = WSGIContainer(app.app)
+        if 'SSL_KEY' in app.app.config:
+            http_server = HTTPServer(appl, ssl_options={
+                "certfile": app.app.config['SSL_CRT'],
+                "keyfile": app.app.config['SSL_KEY'],
+            })
+        else:
+            http_server = HTTPServer(appl)
         http_server.listen(port)
         print("Starting production server on port %d..." % port)
         IOLoop.instance().start()
