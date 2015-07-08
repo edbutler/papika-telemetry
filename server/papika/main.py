@@ -17,15 +17,20 @@ def _go(args):
         except:
             sys.stderr.write("WARNING: PAPIKA_CONFIG envvar does not point to a valid file, not loading config!\n")
 
-
     from . import app
     port = app.app.config['PORT']
     app.setup()
 
+    mode = app.app.config['SERVER']
     if args.mode == 'dev':
+        mode = 'development'
+    elif args.mode == 'prd':
+        mode = 'production'
+
+    if mode == 'development':
         print("Starting development server on port %d..." % port)
         app.app.run(port=port)
-    elif args.mode == 'prd':
+    elif mode == 'production':
         appl = WSGIContainer(app.app)
         if 'SSL_KEY' in app.app.config:
             http_server = HTTPServer(appl, ssl_options={
@@ -38,7 +43,7 @@ def _go(args):
         print("Starting production server on port %d..." % port)
         IOLoop.instance().start()
     else:
-        sys.stderr.write("Invalid mode %s, aborting.\n" % args.mode)
+        sys.stderr.write("Invalid SERVER setting '%s', aborting.\n" % args.mode)
         sys.exit(1)
 
 def main():
@@ -49,11 +54,11 @@ def main():
     parser = argparse.ArgumentParser(description=_desc)
 
     mut = parser.add_mutually_exclusive_group()
-    mut.add_argument('-d', '--dev', action='store_const', dest='mode', const='dev', default='dev',
-        help="Run in development mode. Will use flask's built-in auto-reloading web server"
+    mut.add_argument('-d', '--dev', action='store_const', dest='mode', const='dev', default=None,
+        help="Force run in development mode. Overrides SERVER config setting. Will use flask's built-in auto-reloading web server"
     )
     mut.add_argument('-p', '--prd', action='store_const', dest='mode', const='prd',
-        help="Run in production mode. Will use an actual web server (gevent)."
+        help="Force run in production mode. Overrides SERVER config setting. Will use an actual web server (tornado)."
     )
 
     parser.add_argument('config', nargs='?', default=None, type=argparse.FileType('r'),
