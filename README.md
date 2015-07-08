@@ -16,6 +16,8 @@ It uses Postgres's native UUID type and thus other DBMS are **not** supported.
 It has been run and tested on Linux and Windows.
 The suggested installation method for Python packages is to use virtualenv and pip.
 
+The server automatically creates the tabls on first run, so installation consists primarily of installing reuqirements and creating an emtpy database.
+
 Prequisites:
 
 * Python 3.4+ (with development headers if using pip to install `psycopg2`)
@@ -30,18 +32,22 @@ In the following instructions,
 and &lt;db\_name&gt; is the name of the database in which data will be stored.
 We typically use `logging` for the database name.
 
-### Ubuntu (14.04+) Linux Instructions:
+### Ubuntu (14.04+) Linux Installation Instructions:
 
 1. Install required packages:
 
         apt install build-essential g++ python3-dev python3-virtualenv postgresql-server postgresql-server-dev-all
-2. Create the postgres database (run as root, these instructions assume you have never configured postgres so may need to be changed):
+
+2. Create a postgres database (run as root).
+   These instructions will get you up and running assuming you have never configured Postgres before,
+   but the only thing you need is a database in which &lt;user&gt; has the ability to create tables and insert rows.
 
         service postgresql start
         sudo -u postgres createuser -d <user>
-        sudo su <user>:
+        su <user>:
         createdb <user> # this is only so there's a default database when running psql with no args
         createdb <db_name>
+
 3. Install Python virtual environment and requirements (run as &lt;user&gt;):
 
         cd <server_dir>
@@ -55,17 +61,20 @@ To later run the server from a different shell:
         source ./venv/bin/activate # only if this is a different shell than the one you installed with.
         ./bin/runserver.py [args...]
 
-### Red Hat Enterprise Linux Instructions:
+### Red Hat Enterprise Linux Installation Instructions:
 
 1. Install required packages:
 
         yum install rh-python34 postgresql-server postgresql-devel gcc
-2. Create the postgres database (run as root, these instructions assume you have never configured postgres so may need to be changed):
+
+2. Create a postgres database (run as root).
+   These instructions will get you up and running assuming you have never configured Postgres before,
+   but the only thing you need is a database in which &lt;user&gt; has the ability to create tables and insert rows.
 
         postgresql-setup initdb
         service postgresql start
         sudo -u postgres createuser -d <user>
-        # then, running as <user>:
+        su <user>
         createdb <user> # this is only so there's a default database when running psql with no args
         createdb <db_name>
 
@@ -99,18 +108,20 @@ The server is executed by simply running `server/bin/runserver.py` (with virtual
 The task of turning this into a daemon is not (yet) covered here but is recommended for real-world deployments.
 An easier but more fragile method (but useful for testing/development) is to run it inside of tmux/screen.
 
+The server will automatically populate the database with tables if they do not already exist.
+
 The server is configured through a Python file in a manner similar to Flask (it is, in fact, the Flask config file with some extra fields).
 It can be passed to `runserver.py` either as a CLI argument or through the `PAPIKA_CONFIG` environment variable.
 There is a sample configuration file in `server/sample_config.py`.
 
 Configuration Values (any built-in Flask values also work):
 
-Name  | Description
-------------- | -------------
-DEBUG | boolean, enable/disable debug mode. Should be `False` for production.
-SQLALCHEMY\_DATABASE\_URI | The URI for the postgres database, e.g., 'postgresql:///logging'
-PORT | the port number on which to serve.
-SERVER | Either `'production'` or `'deveopment'`. Production uses the Tornado web server; development uses the built-in Flask web server.
-SSL\_KEY | Path to the SSL key. Will use HTTP is not set, HTTPS if set. Only works for production server.
-SSL\_CRT | Path tot he SSL certificate. Must be set if SSL\_KEY is set.
+Name                      | Description
+------------------------- | -------------
+`DEBUG`                   | boolean, enable/disable debug mode. Should be `False` for production.
+`SQLALCHEMY_DATABASE_URI` | The URI for the postgres database, e.g., 'postgresql:///logging'
+`PORT`                    | the port number on which to serve.
+`SERVER`                  | Either `'production'` or `'deveopment'`. Production uses the Tornado web server; development uses the built-in Flask web server.
+`SSL_KEY`                 | Path to the SSL key. Will use HTTP is not set, HTTPS if set. Only works for production server.
+`SSL_CRT`                 | Path tot he SSL certificate. Must be set if SSL\_KEY is set.
 
