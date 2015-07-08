@@ -93,7 +93,7 @@ To later run the server from a different shell:
     source ./venv/bin/activate
     ./bin/runserver.py [args...]
 
-Windows Installation:
+### Windows Installation:
 
 Detailed instructions forthcoming, but here's a few pointers:
 
