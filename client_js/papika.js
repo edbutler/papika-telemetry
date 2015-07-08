@@ -4,10 +4,6 @@
  * Revision Id: UNKNOWN_REVISION_ID
  */
 
-if (typeof module !== 'undefined' && module.exports) {
-    fetch = require('node-fetch');
-}
-
 var papika = function(){
     "use strict";
     var mdl = {};
@@ -215,9 +211,4 @@ var papika = function(){
 
     return mdl;
 }();
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = papika;
-}
-
 
