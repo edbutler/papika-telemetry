@@ -39,7 +39,7 @@ class Session(db.Model):
     library_revid = db.Column(db.Unicode, nullable=False)
 
 class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.BigInteger, primary_key=True)
     session_id = db.Column(Session.id.type, db.ForeignKey('session.id'), nullable=False)
     # index of this event in all events this session (e.g., 1st event is 1, 2nd is 2...)
     session_sequence_index = db.Column(db.Integer, nullable=False)
@@ -121,7 +121,7 @@ def internal_error(e):
 
 @app.route('/api/session', methods=['POST'])
 def log_session():
-    server_time = datetime.datetime.utcnow()
+    server_time = datetime.datetime.now()
     data, params = parse_message(flask.request)
     required = frozenset(['user_id', 'client_time', 'library_revid', 'detail'])
     obj = create_object(Session(), server_time, data, required)

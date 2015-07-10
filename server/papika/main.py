@@ -24,6 +24,7 @@ def _go(args):
     mode = app.app.config['SERVER']
     if args.mode == 'dev':
         mode = 'development'
+        app.app.config['DEBUG'] = True
     elif args.mode == 'prd':
         mode = 'production'
 
