@@ -68,6 +68,21 @@ var papika = function(){
         return send_nonsession_request(baseUri + '/api/experiment', data, release_id, release_key);
     }
 
+    function query_user_data(baseUri, args, release_id, release_key) {
+        var data = {
+            id: args.user,
+        };
+        return send_nonsession_request(baseUri + '/api/user/get_data', data, release_id, release_key);
+    };
+
+    function save_user_data(baseUri, args, release_id, release_key) {
+        var data = {
+            id: args.user,
+            savedata: JSON.stringify(args.savedata)
+        };
+        return send_nonsession_request(baseUri + '/api/user/set_data', data, release_id, release_key);
+    };
+
     function log_session(baseUri, args, release_id, release_key) {
         var data = {
             user_id: args.user,
@@ -138,7 +153,7 @@ var papika = function(){
             return query_user_id(baseUri, args.username, release_id, release_key).then(function(result) {
                 return result.user_id;
             });
-        }
+        };
 
         self.query_experimental_condition = function(args) {
             if (!is_uuid(args.user)) throw Error('bad/missing user id!');
@@ -146,7 +161,22 @@ var papika = function(){
             return query_experimental_condition(baseUri, args, release_id, release_key).then(function(result) {
                 return result.condition;
             });
-        }
+        };
+
+        self.query_user_data = function(args) {
+            if (!is_uuid(args.user)) throw Error('bad/missing user id!');
+            return query_user_data(baseUri, args, release_id, release_key).then(function(result) {
+                return result.savedata;
+            });
+        };
+
+        self.save_user_data = function(args) {
+            if (!is_uuid(args.user)) throw Error('bad/missing user id!');
+            if (typeof args.savedata === 'undefined') throw Error('bad/missing savedata');
+            return save_user_data(baseUri, args, release_id, release_key).then(function(result) {
+                return true;
+            });
+        };
 
         self.log_event = function(args, do_create_promise) {
             // TODO add some argument checking and error handling
@@ -179,7 +209,7 @@ var papika = function(){
             // TODO maybe wait and batch flushes (with a timeout if it doesn't fill up)
             flush_event_log();
             return promise;
-        }
+        };
 
         self.start_task = function(args) {
             if (!is_uuid(args.group)) throw Error('bad/missing group!');
@@ -204,7 +234,7 @@ var papika = function(){
                     self.log_event(args);
                 }
             };
-        }
+        };
 
         return self;
     };

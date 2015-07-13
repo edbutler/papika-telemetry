@@ -78,6 +78,8 @@ class User(db.Model):
     id = db.Column(UUID, primary_key=True)
     # the username
     username = db.Column(db.Unicode, unique=True, nullable=False)
+    # json blob of arbitrary queryable "save data"
+    savedata = db.Column(db.Unicode)
 
 # many-to-many mapping of users to experimental condition
 class UserExperiment(db.Model):
@@ -159,7 +161,7 @@ def log_events():
     return flask.jsonify(is_success=True)
 
 @app.route('/api/user', methods=['POST'])
-def create_user_id():
+def get_user_by_name():
     data, params = parse_message(flask.request)
     username = data['username']
 
@@ -171,6 +173,32 @@ def create_user_id():
         db.session.commit()
 
     return flask.jsonify(user_id=user.id)
+
+@app.route('/api/user/get_data', methods=['POST'])
+def get_user_savedata():
+    data, params = parse_message(flask.request)
+    id = data['id']
+
+    user = User.query.filter_by(id=id).first()
+    if user is None:
+        raise ValueError('no such user!')
+    else:
+        return flask.jsonify(id=user.id, savedata=user.savedata)
+
+@app.route('/api/user/set_data', methods=['POST'])
+def set_user_savedata():
+    data, params = parse_message(flask.request)
+    id = data['id']
+    savedata = data['savedata']
+
+    user = User.query.filter_by(id=id).first()
+    if user is None:
+        raise ValueError('no such user!')
+    else:
+        user.savedata = savedata
+        db.session.commit()
+
+    return flask.jsonify(is_success=True)
 
 @app.route('/api/experiment', methods=['POST'])
 def get_experimental_condition():
