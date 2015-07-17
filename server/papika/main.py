@@ -4,7 +4,7 @@ from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
-def _go(args):
+def create_app(args):
     if args.config is not None:
         path = os.path.abspath(args.config.name)
         os.environ['PAPIKA_CONFIG'] = path
@@ -18,6 +18,10 @@ def _go(args):
             sys.stderr.write("WARNING: PAPIKA_CONFIG envvar does not point to a valid file, not loading config!\n")
 
     from . import app
+    return app
+
+def _go(args):
+    app = create_app(args)
     port = app.app.config['PORT']
     app.setup()
 

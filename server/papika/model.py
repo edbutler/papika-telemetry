@@ -45,13 +45,17 @@ class TaskStart(db.Model):
     # aka level id, problem id, quest id, puzzle id. whatever the things you are tracing are.
     group_id = db.Column(UUID, nullable=False)
 
+    event = db.relationship("Event", uselist=False, backref=db.backref("task_start", uselist=False))
+
 class TaskEvent(db.Model):
     __tablename__ = 'task_event'
     id = db.Column(Event.id.type, db.ForeignKey('event.id'), primary_key=True)
     # client-selected id for this task. all events within the task will share this id.
-    task_id = db.Column(TaskStart.task_id.type, nullable=False)
+    task_id = db.Column(TaskStart.id.type, nullable=False)
     # index of this event in all events this task (e.g., 1st event is 1, 2nd is 2...)
     task_sequence_index = db.Column(db.Integer, nullable=False)
+
+    event = db.relationship("Event", uselist=False, backref=db.backref("task_event", uselist=False))
 
 # mapping from indenifiable usernames to (presumably anonymous) user ids.
 class User(db.Model):
