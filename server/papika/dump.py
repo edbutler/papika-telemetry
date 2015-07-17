@@ -1,5 +1,5 @@
 
-from .model import *
+from .models import *
 import os, sys
 from .main import create_app
 import argparse

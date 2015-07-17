@@ -5,7 +5,7 @@ import random
 import flask, flask_cors
 import datetime, dateutil.parser
 import hashlib
-from .model import db, User, Session, Event, TaskStart, TaskEvent, UserExperiment
+from .models import db, User, Session, Event, TaskStart, TaskEvent, UserExperiment
 
 app = flask.Flask(__name__)
 app.config.from_object('papika.defaultconfig')
