@@ -37,29 +37,29 @@ def run_test():
         detail={'im':'some data', 'with':[2,'arrays']},
     )
 
-    root_logger.log_event(Event(type_id=23, detail={'Im':['An', 'Event']}))
+    root_logger.log_event(Event(category_id=1, type_id=23, detail={'Im':['An', 'Event']}))
 
     task_logger = root_logger.start_task(
-        event=Event(type_id=2, detail="I'm a task start"),
+        event=Event(category_id=0, type_id=2, detail="I'm a task start"),
         group_id='586c3a14-3659-4975-a28e-d88811a4632b'
     )
 
     task_events = [
-        (10, 'task event 1'),
-        (432, 'task event 2'),
-        (4, 'task event 3'),
+        (2, 10, 'task event 1'),
+        (2, 432, 'task event 2'),
+        (2, 4, 'task event 3'),
     ]
 
-    for (t, d) in task_events:
-        task_logger.log_event(Event(type_id=t, detail=d))
+    for (c, t, d) in task_events:
+        task_logger.log_event(Event(category_id=c, type_id=t, detail=d))
 
     root_events = [
-        (62, {'A Different':[None, False, 'Event']}),
-        (23, 'blahblahblablablhablhablhahah'),
+        (1, 62, {'A Different':[None, False, 'Event']}),
+        (4, 23, 'blahblahblablablhablhablhahah'),
     ]
 
-    for (t, d) in root_events:
-        root_logger.log_event(Event(type_id=t, detail=d))
+    for (c, t, d) in root_events:
+        root_logger.log_event(Event(category_id=c, type_id=t, detail=d))
 
     tc.flush_events()
 

@@ -28,8 +28,12 @@ class Event(db.Model):
     server_time = db.Column(db.DateTime(timezone=True), nullable=False)
     # wall time of the client computer when the event was generated
     client_time = db.Column(db.DateTime(timezone=True), nullable=False)
+    # the "category" of the event. This is like type_id but broader. Application-specific.
+    # Examples might include "user events" or "logging events".
+    category_id = db.Column(db.SmallInteger, nullable=False)
     # the "type" of the event. This is entirely application specific, and is used
-    # by aplications to partition events into different kinds.
+    # by aplications to partition events into different kinds. Like category_id, but narrower.
+    # Examples might include "user clicked on the Frob button."
     type_id = db.Column(db.SmallInteger, nullable=False)
     # blob of json data
     detail = db.Column(db.Unicode, nullable=False)

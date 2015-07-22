@@ -11,7 +11,7 @@ import json
 import requests
 import hashlib
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 
 _localdir = os.path.abspath(os.path.dirname(__file__))
 
@@ -103,7 +103,8 @@ def _log_events(base_uri, events, session_id, session_key):
 #############################################################################
 
 class Event:
-    def __init__(self, type_id, detail):
+    def __init__(self, category_id, type_id, detail):
+        self.category_id = category_id
         self.type_id = type_id
         self.detail = json.dumps(detail)
 
@@ -118,6 +119,7 @@ class TaskLogger:
 
         tc._session_counter += 1
         data = {
+            'category_id': event.category_id,
             'type_id': event.type_id,
             'session_sequence_index': tc._session_counter,
             'client_time': str(datetime.datetime.now()),

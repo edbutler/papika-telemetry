@@ -14,7 +14,7 @@ db.init_app(app)
 cors = flask_cors.CORS(app)
 experiments = app.config['PAPIKA_EXPERIMENTS']
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 
 def set_from_dict(self, items):
     for c in self.__table__.columns:
@@ -71,7 +71,7 @@ def log_events():
     server_time = datetime.datetime.now()
     data, params = parse_message(flask.request)
     session_id = params['session']
-    required = frozenset(['session_sequence_index', 'client_time', 'type_id', 'detail'])
+    required = frozenset(['session_sequence_index', 'client_time', 'category_id', 'type_id', 'detail'])
     events = [create_object(Event(), server_time, e, required) for e in data]
     # commit all events first (because we need the ids)
     for obj in events:
