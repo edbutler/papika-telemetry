@@ -22,6 +22,16 @@ def run_test():
     )
     print("Condition: %d" % condition)
 
+    savedata = tc.query_user_savedata(
+        user_id=user_id
+    )
+    print("Save data: %s" % savedata)
+
+    tc.send_user_savedata(
+        user_id=user_id,
+        savedata={"I'm some":["save","data"]}
+    )
+
     root_logger = tc.log_session(
         user_id=user_id,
         detail={'im':'some data', 'with':[2,'arrays']},

@@ -63,6 +63,20 @@ def _query_user(base_uri, username, release_id, release_key):
     result = _send_nonsession_request(base_uri + "/api/user", data, release_id, release_key)
     return result['user_id']
 
+def _query_user_savedata(base_uri, user_id, release_id, release_key):
+    data = {
+        'id': user_id,
+    }
+    result = _send_nonsession_request(base_uri + "/api/user/get_data", data, release_id, release_key)
+    return result['savedata']
+
+def _send_user_savedata(base_uri, user_id, savedata, release_id, release_key):
+    data = {
+        'id': user_id,
+        'savedata': savedata
+    }
+    result = _send_nonsession_request(base_uri + "/api/user/set_data", data, release_id, release_key)
+
 def _query_experiment(base_uri, user_id, experiment_id, release_id, release_key):
     data = {
         'user_id': user_id,
@@ -151,6 +165,13 @@ class TelemetryClient:
 
     def query_experimental_condition(self, user_id, experiment_id):
         return _query_experiment(self.base_uri, user_id, experiment_id, self.release_id, self.release_key)
+
+    def query_user_savedata(self, user_id):
+        data = _query_user_savedata(self.base_uri, user_id, self.release_id, self.release_key)
+        return json.loads(data) if data is not None else None
+
+    def send_user_savedata(self, user_id, savedata):
+        return _send_user_savedata(self.base_uri, user_id, json.dumps(savedata), self.release_id, self.release_key)
 
     def log_session(self, user_id, detail):
         session_id, session_key = _log_session(self.base_uri, user_id, detail, self.release_id, self.release_key)
