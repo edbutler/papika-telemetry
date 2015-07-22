@@ -1,5 +1,7 @@
 
 # Reference client for telemetry system.
+# Doesn't have any of the error handling, etc. a real client should have.
+# But it does follow the same basic interface.
 
 import os, sys
 import subprocess
@@ -11,155 +13,152 @@ import hashlib
 
 PROTOCOL_VERSION = 1
 
-localdir = os.path.abspath(os.path.dirname(__file__))
+_localdir = os.path.abspath(os.path.dirname(__file__))
 
-def check_output(args, cwd):
+def _check_output(args, cwd):
     '''Wrapper for subprocess.check_output that converts result to unicode'''
     result = subprocess.check_output(args, cwd=cwd)
     return result.decode('utf-8')
+_revid = ''
+try:
+    _revid = _check_output(['git', 'rev-parse', 'HEAD'], _localdir).strip()
+    _status = _check_output(['git', 'status', '--porcelain'], _localdir).strip()
+    if len(_status) > 0:
+        _revid += "+"
+except subprocess.CalledProcessError: pass
 
-revid = check_output(['git', 'rev-parse', 'HEAD'], localdir).strip()
-status = check_output(['git', 'status', '--porcelain'], localdir).strip()
-if len(status) > 0:
-    revid += "+"
+# PROTOCOL IMPLEMENTATION
+#############################################################################
 
 # currently unused, but might bring this back later?
-def create_checksum(message, key):
+def _create_checksum(message, key):
     return hashlib.sha256(message.encode('utf-8') + key).hexdigest()
 
-def send_post_request(url, params):
+def _send_post_request(url, params):
     req = requests.post(url, data=json.dumps(params), headers={'Content-Type':'application/json'})
     return req.json()
 
-def send_nonsession_request(url, data, release_id, release_key):
+def _send_nonsession_request(url, data, release_id, release_key):
     data = json.dumps(data)
-    return send_post_request(url, {
+    return _send_post_request(url, {
         'version': PROTOCOL_VERSION,
         'data': data,
         'release': release_id,
-        'checksum': create_checksum(data, release_key),
+        'checksum': _create_checksum(data, release_key),
     })
 
-def send_session_request(url, data, session_id, session_key):
+def _send_session_request(url, data, session_id, session_key):
     data = json.dumps(data)
-    return send_post_request(url, {
+    return _send_post_request(url, {
         'version': PROTOCOL_VERSION,
         'data': data,
         'session': session_id,
-        'checksum': create_checksum(data, session_key),
+        'checksum': _create_checksum(data, session_key),
     })
 
-def query_user(username, release_id, release_key):
+def _query_user(base_uri, username, release_id, release_key):
     data = {
         'username':username,
     }
-    result = send_nonsession_request("http://localhost:5000/api/user", data, release_id, release_key)
+    result = _send_nonsession_request(base_uri + "/api/user", data, release_id, release_key)
     return result['user_id']
 
-def query_experiment(user_id, experiment_id, release_id, release_key):
+def _query_experiment(base_uri, user_id, experiment_id, release_id, release_key):
     data = {
         'user_id': user_id,
         'experiment_id': experiment_id,
     }
-    result = send_nonsession_request("http://localhost:5000/api/experiment", data, release_id, release_key)
+    result = _send_nonsession_request(base_uri + "/api/experiment", data, release_id, release_key)
     return result['condition']
 
-def log_session(user_id, detail, release_id, release_key):
+def _log_session(base_uri, user_id, detail, release_id, release_key):
     data = {
         'user_id': user_id,
         'client_time':str(datetime.datetime.now()),
-        'library_revid': revid,
+        'library_revid': _revid,
         'detail': json.dumps(detail),
     }
-    result = send_nonsession_request("http://localhost:5000/api/session", data, release_id, release_key)
+    result = _send_nonsession_request(base_uri + "/api/session", data, release_id, release_key)
     return result['session_id'], result['session_key']
 
-def log_events(events, session_id, session_key):
-    data = [e.data for e in events]
-    send_session_request("http://localhost:5000/api/event", data, session_id, session_key)
+def _log_events(base_uri, events, session_id, session_key):
+    data = [e for e in events]
+    _send_session_request(base_uri + "/api/event", data, session_id, session_key)
 
-event_counter = 0
+# CLIENT INTERFACE
+#############################################################################
 
 class Event:
     def __init__(self, type_id, detail):
-        global event_counter
-        event_counter += 1
-        self.data = {
-            'type_id': type_id,
-            'session_sequence_index': event_counter,
+        self.type_id = type_id
+        self.detail = json.dumps(detail)
+
+class TaskLogger:
+    def __init__(self, tc, task_id):
+        self.telemetry_client = tc
+        self.task_id = task_id
+        self._task_counter = 0
+
+    def _create_data(self, event):
+        tc = self.telemetry_client
+
+        tc._session_counter += 1
+        data = {
+            'type_id': event.type_id,
+            'session_sequence_index': tc._session_counter,
             'client_time': str(datetime.datetime.now()),
-            'detail': json.dumps(detail),
+            'detail': event.detail,
         }
 
-task_counter = 0
+        if self.task_id is not None:
+            self._task_counter += 1
+            data['task_event'] = {
+                'task_id': self.task_id,
+                'task_sequence_index': self._task_counter
+            }
 
-class TaskStart(Event):
-    def __init__(self, group_id, type_id, detail):
-        super().__init__(type_id, detail)
-        global task_counter
-        task_counter += 1
-        self.task_id = task_counter
-        self.data['task_start'] = {
-            'task_id': self.task_id,
+        return data
+
+    def start_task(self, event, group_id):
+        tc = self.telemetry_client
+        tc._task_counter += 1
+        task_id = tc._task_counter
+
+        data = self._create_data(event)
+        data['task_start'] = {
+            'task_id': task_id,
             'group_id': group_id,
         }
+        self.telemetry_client._events_to_log.append(data)
 
-class TaskEvent(Event):
-    def __init__(self, task_id, seq_index, type_id, detail):
-        super().__init__(type_id, detail)
-        self.data['task_event'] = {
-            'task_id': task_id,
-            'task_sequence_index': seq_index
-        }
+        return TaskLogger(tc, task_id)
 
-def run_test():
-    release_id = 'de4b98ad-3f9a-4aa9-ba7a-9f8cd80eab6e'
-    release_key = b'\xd5\xc4V\xa9\x1e\xb5\xf6\x9c\xf2eQ\x0fmd0\xb2\xac\x9d\x7f\xc3-\x10\x00\x11\x9b\xb1\x8a\x7f\xbe\xed4\x8b'
+    def log_event(self, event):
+        data = self._create_data(event)
+        self.telemetry_client._events_to_log.append(data)
 
-    user_id = query_user(
-        username='pika',
-        release_id=release_id,
-        release_key=release_key
-    )
+class TelemetryClient:
+    def __init__(self, base_uri, release_id, release_key):
+        self.base_uri = base_uri
+        self.release_id = release_id
+        self.release_key = release_key
+        self._session_counter = 0
+        self._task_counter = 0
+        self._events_to_log = []
 
-    condition = query_experiment(
-        user_id=user_id,
-        experiment_id='00000000-0000-0000-0000-000000000000',
-        release_id=release_id,
-        release_key=release_key
-    )
-    print('Condition:' + str(condition))
+    def query_user_id(self, username):
+        return _query_user(self.base_uri, username, self.release_id, self.release_key)
 
-    session_id, session_key = log_session(
-        user_id=user_id,
-        detail={'im':'some data', 'with':[2,'arrays']},
-        release_id=release_id,
-        release_key=release_key
-    )
-    session_key = bytes.fromhex(session_key)
+    def query_experimental_condition(self, user_id, experiment_id):
+        return _query_experiment(self.base_uri, user_id, experiment_id, self.release_id, self.release_key)
 
-    task = TaskStart(
-        group_id='586c3a14-3659-4975-a28e-d88811a4632b',
-        type_id=2,
-        detail="I'm a task start"
-    )
-    task_events = [
-        TaskEvent(task.task_id, 1, 10, 'task event 1'),
-        TaskEvent(task.task_id, 2, 432, 'task event 2'),
-        TaskEvent(task.task_id, 3, 4, 'task event 3'),
-    ]
+    def log_session(self, user_id, detail):
+        session_id, session_key = _log_session(self.base_uri, user_id, detail, self.release_id, self.release_key)
+        self.session_id = session_id
+        self.session_key = bytes.fromhex(session_key)
+        return TaskLogger(self, None)
 
-    events = [
-        Event(23, {'Im':['An', 'Event']}),
-        Event(62, {'A Different':[None, False, 'Event']}),
-        Event(23, 'blahblahblablablhablhablhahah'),
-    ]
-
-    log_events(
-        events=events + [task] + task_events,
-        session_id=session_id,
-        session_key=session_key
-    )
-
-run_test()
+    def flush_events(self):
+        _log_events(self.base_uri, self._events_to_log, self.session_id, self.session_key)
+        self._events_to_log = []
 
