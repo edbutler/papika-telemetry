@@ -30,7 +30,7 @@ def _go(args):
             return d
 
         def dump_session(s):
-            all_events = Event.query.filter_by(session_id=s.id)
+            all_events = Event.query.filter_by(session_id=s.id).order_by(Event.id)
 
             non_task_events = []
             tasks = {}
