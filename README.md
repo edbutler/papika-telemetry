@@ -10,6 +10,8 @@ Intended applications include research experiments and usability testing.
 The server is written in Python with a Python reference implementation of a client.
 Currently, the only production-usable client is for JavaScript applications.
 
+This is still an early work in progress and breaking changes are expected, as well as clients in more languages.
+
 ### Motivation and Goals
 
 What this is designed to do:
