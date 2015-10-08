@@ -13,9 +13,9 @@ It uses Postgres's native UUID type and thus other DBMS are **not** supported.
 It has been run and tested on Linux and Windows.
 The suggested installation method for Python packages is to use virtualenv and pip.
 
-The server automatically creates the tabls on first run, so installation consists primarily of installing reuqirements and creating an emtpy database.
+The server automatically creates the tables on first run, so installation consists primarily of installing requirements and creating an empty database.
 
-Prequisites:
+Prerequisites:
 
 * Python 3.4+ (with development headers if using pip to install `psycopg2`)
 * PostgreSQL 9.4+ (with development headers if using pip to install `psycopg2`)
@@ -118,7 +118,7 @@ Name                      | Description
 `DEBUG`                   | boolean, enable/disable debug mode. Should be `False` for production.
 `SQLALCHEMY_DATABASE_URI` | The URI for the postgres database, e.g., 'postgresql:///logging'
 `PORT`                    | the port number on which to serve.
-`SERVER`                  | Either `'production'` or `'deveopment'`. Production uses the Tornado web server; development uses the built-in Flask web server.
+`SERVER`                  | Either `'production'` or `'development'`. Production uses the Tornado web server; development uses the built-in Flask web server.
 `SSL_KEY`                 | Path to the SSL key. Will use HTTP is not set, HTTPS if set. Only works for production server.
 `SSL_CRT`                 | Path tot he SSL certificate. Must be set if `SSL_KEY` is set.
 
