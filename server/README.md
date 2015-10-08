@@ -33,7 +33,7 @@ We typically use `logging` for the database name.
 
 1. Install required packages:
 
-        apt install build-essential g++ python3-dev python3-virtualenv postgresql-server postgresql-server-dev-all
+        apt install build-essential g++ python3-dev python3-virtualenv postgresql-server-dev-all
 
 2. Create a postgres database (run as root).
    These instructions will get you up and running assuming you have never configured Postgres before,
