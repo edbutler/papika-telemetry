@@ -4,7 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using Papika;
 
-public class NetworkClientTest : MonoBehaviour
+/// <summary>
+/// A test component that invokes the backend protocol implementation directly to test functionality.
+/// </summary>
+public class NetworkBackendClientTest : MonoBehaviour
 {
     [SerializeField]
     [Tooltip("The server used for development. Used when the game is run in the Unity editor.")]
@@ -14,32 +17,22 @@ public class NetworkClientTest : MonoBehaviour
     [Tooltip("The server used for production builds. Used outside of the editor by default.")]
     private string ProdServer;
 
-    // XXX (kasiu): Eventually log events.
-    //private List<RetryWWW> events;
-
-    private int sessionSequenceCounter;
-    private int taskIdCounter;
-
-    private Uri server;
+    private Uri serverUri;
 
     /// <summary>
     /// Unity Awake()
     /// </summary>
     private void Awake () {
 #if UNITY_EDITOR
-        this.server = new Uri(DevServer);
+        this.serverUri = new Uri(DevServer);
 #else
-        this.server = new Uri(ProdServer);
+        this.serverUri = new Uri(ProdServer);
 #endif
-
-        this.sessionSequenceCounter = 1;
-        this.taskIdCounter = 1;
-
 
         // Set up some dummy values for testing.
         var releaseId = Guid.NewGuid();
         var releaseKey = Guid.NewGuid().ToString();
-        var networkClient = GetComponent<NetworkClient>();
+        var clientArgs = new ClientArgs(serverUri, releaseId, releaseKey);
 
         Debug.Log("Testing the telemetry server");
 
@@ -65,7 +58,7 @@ public class NetworkClientTest : MonoBehaviour
 
             // TESTING QUERY DATA
             Debug.Log("Testing that QueryUserData works...");
-            networkClient.QueryUserData(server, userId, releaseId, releaseKey, onSuccess, onFailure);
+            NetworkBackend.QueryUserData(this, clientArgs, userId, onSuccess, onFailure);
         };
 
         Action<string> setOnLogEventOnSuccess = s => {
@@ -88,7 +81,7 @@ public class NetworkClientTest : MonoBehaviour
             eventDict.Add("detail", MicroJSON.Serialize(eventDetail));
 
             var events = new object[]{eventDict};
-            networkClient.LogEvents(server, events, g, s, setOnLogEventOnSuccess, onFailure);
+            NetworkBackend.LogEvents(this, serverUri, events, g, s, setOnLogEventOnSuccess, onFailure);
         };
 
         Action<Guid> setUserIdOnSuccess = g => {
@@ -97,13 +90,13 @@ public class NetworkClientTest : MonoBehaviour
 
             // TESTING QUERY EXPERIMENTAL CONDITION
             Debug.Log("Testing that QueryExperimentalCondition works...");
-            networkClient.QueryExperimentalCondition(server, userId, new Guid("00000000-0000-0000-0000-000000000000"), releaseId, releaseKey, setExperimentalConditionOnSuccess, onFailure);
+            NetworkBackend.QueryExperimentalCondition(this, clientArgs, userId, new Guid("00000000-0000-0000-0000-000000000000"), setExperimentalConditionOnSuccess, onFailure);
 
             // TESTING SAVE/QUERY USER DATA
             Debug.Log("Testing that SaveUserData works...");
             var saveData = new Dictionary<string, object>();
             saveData.Add("I'm some", new object[] {"save", "data"});
-            networkClient.SaveUserData(server, userId, saveData, releaseId, releaseKey, setUserDataOnSuccess, onFailure);
+            NetworkBackend.SetUserData(this, clientArgs, userId, MicroJSON.Serialize(saveData), setUserDataOnSuccess, onFailure);
 
             // TESTING LOG SESSION
             Debug.Log("Testing that LogSession works...");
@@ -111,23 +104,10 @@ public class NetworkClientTest : MonoBehaviour
             sessionData.Add("i'm", "some_data");
             sessionData.Add("with", new object[] { 2, "arrays" });
 
-            networkClient.LogSession(server, userId, sessionData, "UNHAPPY ID", releaseId, releaseKey, setOnLogSessionOnSuccess, onFailure);
+            NetworkBackend.LogSession(this, clientArgs, userId, MicroJSON.Serialize(sessionData), "UNHAPPY ID", setOnLogSessionOnSuccess, onFailure);
         };
 
         Debug.Log("Testing that QueryUserId works...");
-        networkClient.QueryUserId(server, "dedennehblehs", releaseId, releaseKey, setUserIdOnSuccess, onFailure);
+        NetworkBackend.QueryUserId(this, clientArgs, "dedennehblehs", setUserIdOnSuccess, onFailure);
 	}
-
-    /// <summary>
-    /// Unity Update()
-    /// </summary>
-	private void Update () {
-	    // TODO (kasiu): Exponential backoff resending the events.
-	}
-
-#region PUBLIC FUNCTIONS
-    public void LogEvent(int eventId, string data) {
-
-    }
-#endregion
 }

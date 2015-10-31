@@ -23,6 +23,12 @@ namespace Papika {
                 writer.Write(jInt.Value);
                 return;
             }
+            // short
+            var jShort = json as short?;
+            if (jInt != null) {
+                writer.Write(jInt.Value);
+                return;
+            }
             // string
             var jStr = json as string;
             if (jStr != null) {

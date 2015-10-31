@@ -3,18 +3,18 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Papika {
+namespace Papika
+{
     /// <summary>
-    /// The Unity client for the Papika library.
+    /// The backend protocol implementation for the Papika client library.
     /// </summary>
-    public class NetworkClient : MonoBehaviour
+    public static class NetworkBackend
     {
         private static int PROTOCOL_VERSION = 2;
         private static Dictionary<string, string> headers = null;
-        private static string REVISION_ID = "UNKNOWN_REVISION_ID";
 
         // Public client functions
-        public void QueryUserId(Uri baseUri, string username, Guid releaseId, string releaseKey, Action<Guid> onSuccess, Action<string> onFailure) {
+        public static void QueryUserId(MonoBehaviour mb, ClientArgs args, string username, Action<Guid> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("username", username);
             Action<string> callback = s => {
@@ -30,10 +30,11 @@ namespace Papika {
                 onSuccess(new Guid(guid));
             };
 
-            SendNonSessionRequest(new Uri(baseUri, "/api/user"), data, releaseId, releaseKey, callback, onFailure);
+            var newArgs = new ClientArgs(new Uri(args.BaseUri, "/api/user"), args);
+            SendNonSessionRequest(mb, newArgs, data, callback, onFailure);
         }
 
-        public void QueryExperimentalCondition(Uri baseUri, Guid userId, Guid experimentId, Guid releaseId, string releaseKey, Action<int> onSuccess, Action<string> onFailure) {
+        public static void QueryExperimentalCondition(MonoBehaviour mb, ClientArgs args, Guid userId, Guid experimentId, Action<int> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("user_id", userId);
             data.Add("experiment_id", experimentId);
@@ -48,34 +49,37 @@ namespace Papika {
                 onSuccess(int.Parse(conditionStr));
             };
 
-            SendNonSessionRequest(new Uri(baseUri, "/api/experiment"), data, releaseId, releaseKey, callback, onFailure);
+            var newArgs = new ClientArgs(new Uri(args.BaseUri, "/api/experiment"), args);
+            SendNonSessionRequest(mb, newArgs, data, callback, onFailure);
         }
 
-        public void QueryUserData(Uri baseUri, Guid userId, Guid releaseId, string releaseKey, Action<string> onSuccess, Action<string> onFailure) {
+        public static void QueryUserData(MonoBehaviour mb, ClientArgs args, Guid userId, Action<string> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("id", userId);
 
             // TODO (kasiu): Process the user data here. Currently unimplemented.
 
-            SendNonSessionRequest(new Uri(baseUri, "/api/user/get_data"), data, releaseId, releaseKey, onSuccess, onFailure);
+            var newArgs = new ClientArgs(new Uri(args.BaseUri, "/api/user/get_data"), args.ReleaseId, args.ReleaseKey);
+            SendNonSessionRequest(mb, newArgs, data, onSuccess, onFailure);
         }
 
-        public void SaveUserData(Uri baseUri, Guid userId, object savedata, Guid releaseId, string releaseKey, Action<string> onSuccess, Action<string> onFailure) {
+        public static void SetUserData(MonoBehaviour mb, ClientArgs args, Guid userId, string savedata, Action<string> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("id", userId);
-            data.Add("savedata", MicroJSON.Serialize(savedata));
+            data.Add("savedata", savedata);
 
             // We don't need to implement a special callback here, since we don't get anything back.
-            SendNonSessionRequest(new Uri(baseUri, "/api/user/set_data"), data, releaseId, releaseKey, onSuccess, onFailure);
+            var newArgs = new ClientArgs(new Uri(args.BaseUri, "/api/user/set_data"), args);
+            SendNonSessionRequest(mb, newArgs, data, onSuccess, onFailure);
         }
 
-        public void LogSession(Uri baseUri, Guid userId, Dictionary<string, object> detail, string revisionId, Guid releaseId, string releaseKey, Action<Guid, string> onSuccess, Action<string> onFailure) {
+        public static void LogSession(MonoBehaviour mb, ClientArgs args, Guid userId, string detail, string revisionId, Action<Guid, string> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("user_id", userId);
-            data.Add("release_id", releaseId);
+            data.Add("release_id", args.ReleaseId);
             // XXX (kasiu): Need to check if this is the right DateTime string to send. I THINK THIS IS WRONG BUT I DON'T GIVE A FOOBAR RIGHT NOW. FIXME WHEN THE SERVER SCREAMS.
             data.Add("client_time", DateTime.Now.ToString());
-            data.Add("detail", MicroJSON.Serialize(detail));
+            data.Add("detail", detail);
             data.Add("library_revid", revisionId);
 
             // Processing to get session_id
@@ -91,45 +95,46 @@ namespace Papika {
                 onSuccess(new Guid(sessionId), sessionKey);
             };
 
-            SendNonSessionRequest(new Uri(baseUri, "/api/session"), data, releaseId, releaseKey, callback, onFailure);
+            var newArgs = new ClientArgs(new Uri(args.BaseUri, "/api/session"), args);
+            SendNonSessionRequest(mb, newArgs, data, callback, onFailure);
         }
 
-        public void LogEvents(Uri baseUri, object[] events, Guid sessionId, string sessionKey, Action<string> onSuccess, Action<string> onFailure) {
-            SendSessionRequest(new Uri(baseUri, "/api/event"), events, sessionId, sessionKey, onSuccess, onFailure);
+        public static void LogEvents(MonoBehaviour mb, Uri baseUri, object[] events, Guid sessionId, string sessionKey, Action<string> onSuccess, Action<string> onFailure) {
+            SendSessionRequest(mb, new Uri(baseUri, "/api/event"), events, sessionId, sessionKey, onSuccess, onFailure);
         }
 
         /// <summary>
         /// Sends a non-session request.
         /// </summary>
-        private void SendNonSessionRequest(Uri url, Dictionary<string, object> data, Guid releaseId, string releaseKey, Action<string> onSuccess, Action<string> onFailure) {
+        private static void SendNonSessionRequest(MonoBehaviour mb, ClientArgs args, Dictionary<string, object> data, Action<string> onSuccess, Action<string> onFailure) {
             var values = new Dictionary<string, object>();
             values.Add("version", PROTOCOL_VERSION);
             values.Add("data", MicroJSON.Serialize(data));
-            values.Add("release", releaseId);
+            values.Add("release", args.ReleaseId);
             values.Add("checksum", string.Empty);
             var jsonString = MicroJSON.Serialize(values);
 
-            StartCoroutine(SendPostRequest(url, jsonString, onSuccess, onFailure));
+            mb.StartCoroutine(SendPostRequest(args.BaseUri, jsonString, onSuccess, onFailure));
         }
 
         ///// <summary>
         ///// Sends a session request (tied to a given session id).
         ///// </summary>
-        private void SendSessionRequest(Uri url, object[] data, Guid sessionId, string sessionKey, Action<string> onSuccess, Action<string> onFailure) {
+        private static void SendSessionRequest(MonoBehaviour mb, Uri url, object[] data, Guid sessionId, string sessionKey, Action<string> onSuccess, Action<string> onFailure) {
             var values = new Dictionary<string, object>();
             values.Add("version", PROTOCOL_VERSION);
             values.Add("data", MicroJSON.Serialize(data));
             values.Add("session", sessionId.ToString());
             values.Add("checksum", string.Empty);
 
-            StartCoroutine(SendPostRequest(url, MicroJSON.Serialize(values), onSuccess, onFailure));
+            mb.StartCoroutine(SendPostRequest(url, MicroJSON.Serialize(values), onSuccess, onFailure));
         }
 
         /// <summary>
         /// Sends a post request with JSON data using Unity's WWW class.
         /// </summary>
         /// Action<string, bool> is response-text and whether or not the response was successful.
-        private IEnumerator SendPostRequest(Uri url, string data, Action<string> onSuccess, Action<string> onFailure) {
+        private static IEnumerator SendPostRequest(Uri url, string data, Action<string> onSuccess, Action<string> onFailure) {
             if (headers == null) {
                 initializeHeaders();
             }
