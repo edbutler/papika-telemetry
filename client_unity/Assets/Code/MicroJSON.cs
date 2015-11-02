@@ -1,9 +1,15 @@
-﻿using System.Collections.Generic;
+﻿/**!
+ * Papika telemetry client (Unity) library.
+ * Copyright 2015 Kristin Siu (kasiu).
+ * Revision Id: UNKNOWN_REVISION_ID
+ */
+using System.Collections.Generic;
 
-namespace Papika {
-
+namespace Papika
+{
     /// <summary>
-    /// Oh boy, a JSON encoder. Because I love myself so much.
+    /// A mini (micro) JSON serializer used to encode JSON objects for the Papika client.
+    /// Not as robust as other options (but is free and tiny).
     /// </summary>
     public static class MicroJSON
     {
@@ -25,8 +31,8 @@ namespace Papika {
             }
             // short
             var jShort = json as short?;
-            if (jInt != null) {
-                writer.Write(jInt.Value);
+            if (jShort != null) {
+                writer.Write(jShort.Value);
                 return;
             }
             // string
@@ -37,7 +43,7 @@ namespace Papika {
                 writer.Write('\"');
                 return;
             }
-            // MAGIC SPECIAL CASING FOR GUIDS CAUSE WE USE THEM SO FREQUENTLY
+            // guids (MAGIC SPECIAL CASING BECAUSE WE USE THEM SO FREQUENTLY)
             var jGuid = json as System.Guid?;
             if (jGuid != null) {
                 SerializeTo(jGuid.Value.ToString(), writer);
@@ -80,8 +86,12 @@ namespace Papika {
                 writer.Write('}');
                 return;
             }
+            // TODO (kasiu): Handle other kinds of types in the future.
         }
 
+        /// <summary>
+        /// Serializes an object as a string.
+        /// </summary>
         public static string Serialize(object json) {
             var sb = new System.Text.StringBuilder();
             var sw = new System.IO.StringWriter(sb);

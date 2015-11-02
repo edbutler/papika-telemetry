@@ -1,21 +1,30 @@
-﻿using UnityEngine;
+﻿/**!
+ * Papika telemetry client (Unity) library.
+ * Copyright 2015 Kristin Siu (kasiu).
+ * Revision Id: UNKNOWN_REVISION_ID
+ */
+using UnityEngine;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Papika;
 
 /// <summary>
-/// A test component that invokes the backend protocol implementation directly to test functionality.
+/// A test component that invokes the backend protocol implementation directly.
+/// This is a good way to test if your build works in Unity (i.e. Unity's WWW
+/// classes are behaving for your platform).
+/// Simply attach this to an empty game object in a scene, build, and run.
+/// (Assumes you have the Papika server running somewhere when you do.)
 /// </summary>
 public class NetworkBackendClientTest : MonoBehaviour
 {
+    // Change these values to wherever your test server is currently living.
     [SerializeField]
     [Tooltip("The server used for development. Used when the game is run in the Unity editor.")]
     private string DevServer = "http://localhost:5000";
 
     [SerializeField]
     [Tooltip("The server used for production builds. Used outside of the editor by default.")]
-    private string ProdServer;
+    private string ProdServer = "http://localhost:5000";
 
     private Uri serverUri;
 
@@ -26,15 +35,23 @@ public class NetworkBackendClientTest : MonoBehaviour
 #if UNITY_EDITOR
         this.serverUri = new Uri(DevServer);
 #else
+        // Otherwise, try and call this method from a UI button or something by attaching the function below.
         this.serverUri = new Uri(ProdServer);
 #endif
 
+        TestTelemetryServer();
+	}
+
+    /// <summary>
+    /// Tests the telemetry server by writing some hilarious dummy values.
+    /// Left public to invoke externally if you desire.
+    /// </summary>
+    public void TestTelemetryServer() {
+        Debug.Log("Testing the telemetry server");
         // Set up some dummy values for testing.
         var releaseId = Guid.NewGuid();
         var releaseKey = Guid.NewGuid().ToString();
         var clientArgs = new ClientArgs(serverUri, releaseId, releaseKey);
-
-        Debug.Log("Testing the telemetry server");
 
         // TESTING QUERY USER ID ----> and some other stuff.
         var userId = Guid.Empty;
@@ -58,7 +75,7 @@ public class NetworkBackendClientTest : MonoBehaviour
 
             // TESTING QUERY DATA
             Debug.Log("Testing that QueryUserData works...");
-            NetworkBackend.QueryUserData(this, clientArgs, userId, onSuccess, onFailure);
+            UnityBackend.QueryUserData(this, clientArgs, userId, onSuccess, onFailure);
         };
 
         Action<string> setOnLogEventOnSuccess = s => {
@@ -80,8 +97,8 @@ public class NetworkBackendClientTest : MonoBehaviour
             eventDict.Add("client_time", DateTime.Now.ToString());
             eventDict.Add("detail", MicroJSON.Serialize(eventDetail));
 
-            var events = new object[]{eventDict};
-            NetworkBackend.LogEvents(this, serverUri, events, g, s, setOnLogEventOnSuccess, onFailure);
+            var events = new object[] { eventDict };
+            UnityBackend.LogEvents(this, serverUri, events, g, s, setOnLogEventOnSuccess, onFailure);
         };
 
         Action<Guid> setUserIdOnSuccess = g => {
@@ -90,13 +107,13 @@ public class NetworkBackendClientTest : MonoBehaviour
 
             // TESTING QUERY EXPERIMENTAL CONDITION
             Debug.Log("Testing that QueryExperimentalCondition works...");
-            NetworkBackend.QueryExperimentalCondition(this, clientArgs, userId, new Guid("00000000-0000-0000-0000-000000000000"), setExperimentalConditionOnSuccess, onFailure);
+            UnityBackend.QueryExperimentalCondition(this, clientArgs, userId, new Guid("00000000-0000-0000-0000-000000000000"), setExperimentalConditionOnSuccess, onFailure);
 
             // TESTING SAVE/QUERY USER DATA
             Debug.Log("Testing that SaveUserData works...");
             var saveData = new Dictionary<string, object>();
-            saveData.Add("I'm some", new object[] {"save", "data"});
-            NetworkBackend.SetUserData(this, clientArgs, userId, MicroJSON.Serialize(saveData), setUserDataOnSuccess, onFailure);
+            saveData.Add("I'm some", new object[] { "save", "data" });
+            UnityBackend.SetUserData(this, clientArgs, userId, MicroJSON.Serialize(saveData), setUserDataOnSuccess, onFailure);
 
             // TESTING LOG SESSION
             Debug.Log("Testing that LogSession works...");
@@ -104,10 +121,10 @@ public class NetworkBackendClientTest : MonoBehaviour
             sessionData.Add("i'm", "some_data");
             sessionData.Add("with", new object[] { 2, "arrays" });
 
-            NetworkBackend.LogSession(this, clientArgs, userId, MicroJSON.Serialize(sessionData), "UNHAPPY ID", setOnLogSessionOnSuccess, onFailure);
+            UnityBackend.LogSession(this, clientArgs, userId, MicroJSON.Serialize(sessionData), "UNHAPPY ID", setOnLogSessionOnSuccess, onFailure);
         };
 
         Debug.Log("Testing that QueryUserId works...");
-        NetworkBackend.QueryUserId(this, clientArgs, "dedennehblehs", setUserIdOnSuccess, onFailure);
-	}
+        UnityBackend.QueryUserId(this, clientArgs, "dedennehblehs", setUserIdOnSuccess, onFailure);
+    }
 }

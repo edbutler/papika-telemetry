@@ -1,4 +1,9 @@
-﻿using UnityEngine;
+﻿/**!
+ * Papika telemetry client (Unity) library.
+ * Copyright 2015 Kristin Siu (kasiu).
+ * Revision Id: UNKNOWN_REVISION_ID
+ */
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,13 +12,18 @@ namespace Papika
 {
     /// <summary>
     /// The backend protocol implementation for the Papika client library.
+    /// Implemented as a static class because it's mostly full of utility
+    /// functions used by the corresponding PapikaClient Unity component.
     /// </summary>
-    public static class NetworkBackend
+    public static class UnityBackend
     {
+        // XXX (kasiu): This number is currently arbitrarily set to 2.
         private static int PROTOCOL_VERSION = 2;
         private static Dictionary<string, string> headers = null;
 
-        // Public client functions
+        /// <summary>
+        /// Queries the user id.
+        /// </summary>
         public static void QueryUserId(MonoBehaviour mb, ClientArgs args, string username, Action<Guid> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("username", username);
@@ -34,6 +44,9 @@ namespace Papika
             SendNonSessionRequest(mb, newArgs, data, callback, onFailure);
         }
 
+        /// <summary>
+        /// Queries for an experimental condition (integer), which is assigned on success.
+        /// </summary>
         public static void QueryExperimentalCondition(MonoBehaviour mb, ClientArgs args, Guid userId, Guid experimentId, Action<int> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("user_id", userId);
@@ -53,16 +66,22 @@ namespace Papika
             SendNonSessionRequest(mb, newArgs, data, callback, onFailure);
         }
 
+        /// <summary>
+        /// Queries for any saved user data.
+        /// </summary>
         public static void QueryUserData(MonoBehaviour mb, ClientArgs args, Guid userId, Action<string> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("id", userId);
 
-            // TODO (kasiu): Process the user data here. Currently unimplemented.
+            // TODO (kasiu): Process the user data here?
 
             var newArgs = new ClientArgs(new Uri(args.BaseUri, "/api/user/get_data"), args.ReleaseId, args.ReleaseKey);
             SendNonSessionRequest(mb, newArgs, data, onSuccess, onFailure);
         }
 
+        /// <summary>
+        /// Sets user data.
+        /// </summary>
         public static void SetUserData(MonoBehaviour mb, ClientArgs args, Guid userId, string savedata, Action<string> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("id", userId);
@@ -73,6 +92,9 @@ namespace Papika
             SendNonSessionRequest(mb, newArgs, data, onSuccess, onFailure);
         }
 
+        /// <summary>
+        /// Logs a session and returns session information on success.
+        /// </summary>
         public static void LogSession(MonoBehaviour mb, ClientArgs args, Guid userId, string detail, string revisionId, Action<Guid, string> onSuccess, Action<string> onFailure) {
             var data = new Dictionary<string, object>();
             data.Add("user_id", userId);
@@ -99,6 +121,9 @@ namespace Papika
             SendNonSessionRequest(mb, newArgs, data, callback, onFailure);
         }
 
+        /// <summary>
+        /// Logs an array of events.
+        /// </summary>
         public static void LogEvents(MonoBehaviour mb, Uri baseUri, object[] events, Guid sessionId, string sessionKey, Action<string> onSuccess, Action<string> onFailure) {
             SendSessionRequest(mb, new Uri(baseUri, "/api/event"), events, sessionId, sessionKey, onSuccess, onFailure);
         }
