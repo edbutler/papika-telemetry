@@ -16,7 +16,7 @@ def _go(args):
                 'type': e.type_id,
                 'session_sequence': e.session_sequence_index,
                 'time': str(e.client_time),
-                'detail': json.loads(e.detail),
+                'detail': json.loads(e.detail) if e.detail != '' else None,
             }
 
         def dump_task_start(e):
@@ -53,7 +53,7 @@ def _go(args):
                 'id': s.id,
                 'release': s.release_id,
                 'time': str(s.client_time),
-                'detail': json.loads(s.detail),
+                'detail': json.loads(s.detail) if s.detail != '' else None,
                 'tasks': [v for v in tasks.values()],
                 'events': non_task_events
             }
