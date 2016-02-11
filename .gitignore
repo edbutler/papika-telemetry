@@ -1,2 +1,6 @@
 *.pyc
 venv/
+client_unity/bin/
+client_unity/obj/
+client_unity/.vs/
+*.csproj.user
