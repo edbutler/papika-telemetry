@@ -49,22 +49,23 @@ namespace Papika
         /// Unity Awake()
         /// </summary>
         private void Awake() {
+            // this may be called multiple times if scene gets reloaded, don't reinitialize!
+
             // Process editor parameters or assume user will call initialize with them later.
-            if (string.IsNullOrEmpty(BaseUri) && string.IsNullOrEmpty(ReleaseId) && !string.IsNullOrEmpty(ReleaseKey)) {
+            if (this.config == null && !(string.IsNullOrEmpty(BaseUri) || string.IsNullOrEmpty(ReleaseId) || string.IsNullOrEmpty(ReleaseKey))) {
                 this.config = new ClientArgs(new Uri(BaseUri), new Guid(ReleaseId), ReleaseKey);
-            } else {
-                this.config = null;
             }
 
-            this.eventsToLog = new List<object>();
-            this.sessionSequenceCounter = 1;
-            this.sessionId = null;
-            this.sessionKey = null;
-            this.isFlushEventsLocked = false;
-            this.taskIdCounter = 1;
-            this.wasStartSessionCalled = false;
-
-            this.Root = new TaskLogger(null, logEvent, getTaskId);
+            if (this.eventsToLog == null) {
+                this.eventsToLog = new List<object>();
+                this.sessionSequenceCounter = 1;
+                this.sessionId = null;
+                this.sessionKey = null;
+                this.isFlushEventsLocked = false;
+                this.taskIdCounter = 1;
+                this.wasStartSessionCalled = false;
+                this.Root = new TaskLogger(null, logEvent, getTaskId);
+            }
         }
 
         /// <summary>
