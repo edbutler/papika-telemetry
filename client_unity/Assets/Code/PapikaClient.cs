@@ -131,9 +131,9 @@ namespace Papika
             };
 
             Action<string> onFailure = s => {
-#if UNITY_EDITOR
-                Debug.LogError("Logging session failed: " + s);
-#endif
+//#if UNITY_EDITOR
+//                Debug.LogError("Logging session failed: " + s);
+//#endif
             };
 
             // XXX (kasiu): Revision id is important, but we don't really care right now.
@@ -159,9 +159,9 @@ namespace Papika
             };
 
             Action<string> onFailure = s => {
-#if UNITY_EDITOR
-                Debug.LogError("Logging events failed: " + s);
-#endif
+//#if UNITY_EDITOR
+//                Debug.LogError("Logging events failed: " + s);
+//#endif
                 // TODO (kasiu): Implement exponential backoff or something fancy, eventually.
                 this.isFlushEventsLocked = false;
             };

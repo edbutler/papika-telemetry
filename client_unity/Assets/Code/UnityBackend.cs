@@ -170,14 +170,14 @@ namespace Papika
             // Unity treats errors as strings (as opposed to explicit error codes).
             if (!string.IsNullOrEmpty(www.error)) {
                 // Handle errors here.
-#if UNITY_EDITOR
-                Debug.LogError(string.Format("Post request error: {0}", www.error));
-#endif
+//#if UNITY_EDITOR
+//                Debug.LogError(string.Format("Post request error: {0}", www.error));
+//#endif
                 onFailure(www.error);
             } else {
-#if UNITY_EDITOR
-                Debug.Log(string.Format("Post request response: {0}", www.text));
-#endif
+//#if UNITY_EDITOR
+//                Debug.Log(string.Format("Post request response: {0}", www.text));
+//#endif
                 onSuccess(www.text);
             }
         }
