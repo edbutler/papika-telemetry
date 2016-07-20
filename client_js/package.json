@@ -1,0 +1,20 @@
+{
+  "name": "papika",
+  "version": "0.1.0",
+  "description": "telemetry system client",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edbutler/papika-telemetry.git"
+  },
+  "author": "Eric Butler",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/edbutler/papika-telemetry/issues"
+  },
+  "homepage": "https://github.com/edbutler/papika-telemetry#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-typescript": "^2.13.6",
+    "typescript": "^2.0.0"
+  }
+}

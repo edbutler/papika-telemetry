@@ -1,0 +1,5 @@
+{
+  "globalDevDependencies": {
+    "whatwg-fetch": "registry:dt/whatwg-fetch#0.0.0+20160524142046"
+  }
+}

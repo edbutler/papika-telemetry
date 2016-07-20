@@ -1,5 +1,7 @@
 *.pyc
 venv/
+client_js/node_modules/
+client_js/typings/
 client_unity/bin/
 client_unity/obj/
 client_unity/.vs/

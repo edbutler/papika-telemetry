@@ -4,9 +4,11 @@
  * Revision Id: UNKNOWN_REVISION_ID
  */
 
+ ///<reference path="./typings/index.d.ts"/>
+
 var papika = function(){
     "use strict";
-    var mdl = {};
+    var mdl = {} as any;
 
     var PROTOCOL_VESRION = 2;
     var REVISION_ID = 'UNKNOWN_REVISION_ID';
@@ -108,7 +110,7 @@ var papika = function(){
         if (typeof release_key !== 'string') throw Error('release key is not a string!');
         if (typeof baseUri !== 'string') throw Error('baseUri is not a string!');
 
-        var self = {};
+        var self = {} as any;
 
         var session_sequence_counter = 1;
         var task_id_counter = 1;
@@ -197,15 +199,15 @@ var papika = function(){
                 client_time: new Date().toISOString(),
                 detail: detail,
             };
-            if (args.task_start) data.task_start = args.task_start;
-            if (args.task_event) data.task_event = args.task_event;
+            if (args.task_start) (data as any).task_start = args.task_start;
+            if (args.task_event) (data as any).task_event = args.task_event;
 
             var to_log = {event:data};
 
             var promise;
             if (do_create_promise) {
                 promise = new Promise(function(resolve, reject) {
-                    to_log.resolve = resolve;
+                    (to_log as any).resolve = resolve;
                 });
             }
 
