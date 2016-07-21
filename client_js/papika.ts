@@ -1,4 +1,3 @@
-///<reference path="./typings/index.d.ts"/>
 /**!
  * Papika telemetry client library.
  * Copyright 2015-2016 Eric Butler.

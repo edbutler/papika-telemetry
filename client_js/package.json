@@ -17,6 +17,7 @@
     "gulp": "^3.9.1",
     "gulp-replace": "^0.5.4",
     "gulp-typescript": "^2.13.6",
+    "merge-stream": "^1.0.0",
     "typescript": "^2.0.0"
   }
 }
