@@ -13,7 +13,9 @@
   },
   "homepage": "https://github.com/edbutler/papika-telemetry#readme",
   "devDependencies": {
+    "git-rev-sync": "^1.6.0",
     "gulp": "^3.9.1",
+    "gulp-replace": "^0.5.4",
     "gulp-typescript": "^2.13.6",
     "typescript": "^2.0.0"
   }
