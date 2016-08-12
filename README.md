@@ -40,7 +40,7 @@ What this is **not** designed to do:
 
 ### Server
 
-The server requires Python3.4+ with Flask and SQLAlchemy, and PostgreSQL.
+The server requires Python3.5+ with Flask and SQLAlchemy, and PostgreSQL.
 It runs on several Linux distros and Windows (and probably Mac, though this is untested).
 See [server/README.md](server/README.md) for more detailed instructions.
 

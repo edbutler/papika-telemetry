@@ -8,7 +8,7 @@ This readme details installation and running instructions for the server.
 Server Installation
 -------------------
 
-The server runs in Python 3.4+ using Flask and SQLAlchmey, backed by a PostgreSQL database.
+The server runs in Python 3.5+ using Flask and SQLAlchmey, backed by a PostgreSQL database.
 It uses Postgres's native UUID type and thus other DBMS are **not** supported.
 It has been run and tested on Linux and Windows.
 The suggested installation method for Python packages is to use virtualenv and pip.
@@ -50,8 +50,8 @@ This is not an industrial-strength install script but should show the basic step
 
         cd <server_dir>
         python3 -m venv venv
-        venv/bin/pip install --upgrade setuptools pip
-        venv/bin/pip install -r requirements.txt
+        ./venv/bin/pip install --upgrade setuptools pip
+        ./venv/bin/pip install -r requirements.txt
 
 To later run the server:
 
