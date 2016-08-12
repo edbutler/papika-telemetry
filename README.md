@@ -42,7 +42,7 @@ What this is **not** designed to do:
 
 The server requires Python3.4+ with Flask and SQLAlchemy, and PostgreSQL.
 It runs on several Linux distros and Windows (and probably Mac, though this is untested).
-See `server/README.md` for more detailed instructions.
+See [server/README.md](server/README.md) for more detailed instructions.
 
 ### Clients
 
