@@ -17,46 +17,46 @@ The server automatically creates the tables on first run, so installation consis
 
 Prerequisites:
 
-* Python 3.4+ (with development headers if using pip to install `psycopg2`)
+* Python 3.5+ (with development headers if using pip to install `psycopg2`)
 * PostgreSQL 9.4+ (with development headers if using pip to install `psycopg2`)
 * virtualenv and pip
 * A C/C++ compiler if using pip to install `psycopg2`
 * All the Python packages listed in `server/requirements.txt`, which can be installed through pip.
 
 In the following instructions,
-&lt;user&gt; is the name of the user that will be running the server,
+&lt;user&gt; is the name of the user that will be running the server (we usually use **papika**),
 &lt;server\_dir&gt; is the directory in which the server code lives (should contain a `requirements.txt`)
 and &lt;db\_name&gt; is the name of the database in which data will be stored.
 We typically use `logging` for the database name.
 
-### Ubuntu (14.04+) Installation Instructions:
+### Ubuntu 16.04 Installation Instructions:
+
+A sample installation script is in [bin/sample-install.sh](bin/sample-install.sh).
+This is not an industrial-strength install script but should show the basic steps.
 
 1. Install required packages:
 
-        apt install build-essential g++ python3-dev python3-virtualenv postgresql-server-dev-all
+        apt install g++ python3-dev python3-venv postgresql-server-dev-all
 
 2. Create a postgres database (run as root).
    These instructions will get you up and running assuming you have never configured Postgres before,
    but the only thing you need is a database in which &lt;user&gt; has the ability to create tables and insert rows.
 
-        service postgresql start
-        sudo -u postgres createuser -d <user>
-        su <user>:
-        createdb <user> # this is only so there's a default database when running psql with no args
-        createdb <db_name>
+        systemctl start postgresql
+        sudo -u postgres createuser <user>
+        sudo -u postgres createdb -O <user> <db_name>
 
 3. Install Python virtual environment and requirements (run as &lt;user&gt;):
 
         cd <server_dir>
-        virtualenv -p /usr/bin/python3.4 venv
-        source ./venv/bin/activate
-        pip install -r ./requirements.txt
+        python3 -m venv venv
+        venv/bin/pip install --upgrade setuptools pip
+        venv/bin/pip install -r requirements.txt
 
-To later run the server from a different shell:
+To later run the server:
 
         cd <server_dir>
-        source ./venv/bin/activate # only if this is a different shell than the one you installed with.
-        ./bin/runserver.py [args...]
+        ./venv/bin/python ./bin/runserver.py [args...]
 
 ### RHEL/Fedora Installation Instructions:
 
@@ -70,10 +70,8 @@ To later run the server from a different shell:
 
         postgresql-setup initdb
         service postgresql start
-        sudo -u postgres createuser -d <user>
-        su <user>
-        createdb <user> # this is only so there's a default database when running psql with no args
-        createdb <db_name>
+        sudo -u postgres createuser <user>
+        sudo -u postgres createdb -O <user> <db_name>
 
 3. Install Python virtual environment and requirements (run as &lt;user&gt;):
 
@@ -85,10 +83,10 @@ To later run the server from a different shell:
 
 To later run the server from a different shell:
 
-    cd <server_dir>
-    scl enable rh-python34 bash
-    source ./venv/bin/activate
-    ./bin/runserver.py [args...]
+        cd <server_dir>
+        scl enable rh-python34 bash
+        source ./venv/bin/activate
+        ./bin/runserver.py [args...]
 
 ### Windows Installation:
 
