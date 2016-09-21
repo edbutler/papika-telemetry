@@ -66,7 +66,18 @@ def _go(args):
                 'sessions': [dump_session(s) for s in Session.query.filter_by(user_id=u.id)],
             }
 
-        users = [dump_user(u) for u in User.query.all()]
+        def dump_user_no_entry(uid):
+            return {
+                'id': uid,
+                'sessions': [dump_session(s) for s in Session.query.filter_by(user_id=uid)],
+            }
+
+        if args.mode == 'user':
+            users = [dump_user(u) for u in User.query.all()]
+        elif args.mode == 'session':
+            users = [dump_user_no_entry(u[0]) for u in db.session.query(Session.user_id).distinct()]
+        else:
+            raise ValueError("invalid mode!")
 
         print(json.dumps(users, indent=4))
 
@@ -78,6 +89,14 @@ def main():
 
     parser.add_argument('config', nargs='?', default=None, type=argparse.FileType('r'),
         help="Config file to use for the server. An alternative is to set the PAPIKA_CONFIG environment variable."
+    )
+
+    mut = parser.add_mutually_exclusive_group(required=True)
+    mut.add_argument('-u', '--user', action='store_const', dest='mode', const='user',
+        help="Use the user table to group and dump sessions. If you use the user table at all, this is probably what you want."
+    )
+    mut.add_argument('-s', '--session', action='store_const', dest='mode', const='session',
+        help="Use the session table to group and dump sessions. If you do not use the user table, this option will instead select all sessions, grouping by user id."
     )
 
     _go(parser.parse_args())
