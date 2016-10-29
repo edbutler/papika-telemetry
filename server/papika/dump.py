@@ -3,10 +3,19 @@ from .models import *
 import os, sys
 from .main import create_app
 import argparse
-import json
+import json, uuid
 from sqlalchemy.sql import select
 
 def _go(args):
+    valid_release_ids = None
+    if args.releaseids is not None:
+        valid_release_ids = frozenset([s.strip() for s in args.releaseids])
+        args.releaseids.close()
+
+    lst = [x for x in valid_release_ids]
+    def do_dump_session(s):
+        return valid_release_ids is None or s.release_id in valid_release_ids
+
     app = create_app(args)
     with app.app.app_context():
 
@@ -60,17 +69,25 @@ def _go(args):
 
 
         def dump_user(u):
-            return {
-                'id': u.id,
-                'username': u.username,
-                'sessions': [dump_session(s) for s in Session.query.filter_by(user_id=u.id)],
-            }
+            sessions = [dump_session(s) for s in Session.query.filter_by(user_id=u.id) if do_dump_session(s)]
+            if len(sessions) == 0:
+                return None
+            else:
+                return {
+                    'id': u.id,
+                    'username': u.username,
+                    'sessions': sessions,
+                }
 
         def dump_user_no_entry(uid):
-            return {
-                'id': uid,
-                'sessions': [dump_session(s) for s in Session.query.filter_by(user_id=uid)],
-            }
+            sessions = [dump_session(s) for s in Session.query.filter_by(user_id=uid) if do_dump_session(s)]
+            if len(sessions) == 0:
+                return None
+            else:
+                return {
+                    'id': uid,
+                    'sessions': sessions,
+                }
 
         if args.mode == 'user':
             users = [dump_user(u) for u in User.query.all()]
@@ -78,6 +95,7 @@ def _go(args):
             users = [dump_user_no_entry(u[0]) for u in db.session.query(Session.user_id).distinct()]
         else:
             raise ValueError("invalid mode!")
+        users = [x for x in users if x is not None]
 
         print(json.dumps(users, indent=4))
 
@@ -98,5 +116,8 @@ def main():
     mut.add_argument('-s', '--session', action='store_const', dest='mode', const='session',
         help="Use the session table to group and dump sessions. If you do not use the user table, this option will instead select all sessions, grouping by user id."
     )
+
+    parser.add_argument('-r' '--release-id-file', default=None, dest='releaseids', type=argparse.FileType('r'),
+        help="Restrict the dump to the release ids listed (one on each line) in the given file")
 
     _go(parser.parse_args())
